@@ -1,0 +1,42 @@
+import 'common/base'
+import 'app'
+import 'map_relate'
+import 'common/enum'
+
+abstract model Category extends Base {
+  @@allow('create', auth().group?[permission?[name == Category && permissionType == CREATE && !disabled]])
+  @@allow('update', auth().group?[permission?[name == Category && permissionType == UPDATE && !disabled]])
+  @@allow('delete', auth().group?[permission?[name == Category && permissionType == DELETE && !disabled]])
+}
+model DisasterType extends Category {
+    name String @unique
+    disaster Disaster[]
+}
+
+model PriorityLevel extends Category {
+    name String @unique
+    disaster Disaster[]
+}
+
+model EmergencyLevel extends Category {
+    name String @unique
+    disaster Disaster[]
+}
+
+
+model DataField extends Category {
+    code String @unique // ví dụ : water level
+    name String
+    unit String
+    rescueTypeOnDisaster RescueTypeOnDisaster[]
+    parentId String
+    dataFieldGroup String
+    disaster DataFieldOnDisaster[]
+}
+
+model RescueType extends Category {
+    name String
+    //size Float
+    unit String 
+    disaster RescueTypeOnDisaster[]
+}

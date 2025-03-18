@@ -1,0 +1,25 @@
+enum PermissionName {
+  AdministrativeUnit
+  Category
+  Disaster
+  Media
+}
+
+enum UserRole {
+  ADMIN
+  RESIDENT
+  STAFF
+}
+
+enum PermissionType {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  AUDIO
+}

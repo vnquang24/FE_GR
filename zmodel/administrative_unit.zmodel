@@ -1,0 +1,34 @@
+import 'common/base'
+import 'common/enum'
+import 'app'
+
+abstract model AdministrativeUnit extends Base {
+  @@allow('create', auth().group?[permission?[name == AdministrativeUnit && permissionType == CREATE && !disabled]])
+  @@allow('update', auth().group?[permission?[(name == AdministrativeUnit && permissionType == UPDATE) || (name == AdministrativeUnit && permissionType == DELETE) && !disabled]])
+  @@allow('delete', auth().group?[permission?[name == AdministrativeUnit && permissionType == DELETE && !disabled]])
+}
+
+model Province extends AdministrativeUnit {
+    name String @unique
+
+    district District[]
+    disaster Disaster[]   
+}
+
+model District extends AdministrativeUnit {
+    name String
+    province Province @relation (fields: [provinceId], references: [id])
+    provinceId String
+    
+    commune Commune[]
+    disaster Disaster[]
+    @@unique([name, provinceId])
+}
+
+model Commune extends AdministrativeUnit {
+    name String @unique
+    district District @relation(fields: [districtId], references: [id])
+    districtId String
+    disaster Disaster[]
+    @@unique([name, districtId])
+}

@@ -1,0 +1,57 @@
+import 'common/base'
+import 'common/enum'
+import 'app'
+
+model User extends Base {
+  email         String         @unique
+  phone         String?        @unique
+  password      String         @password @omit
+  name          String
+  locked        Boolean        @default(false) @deny('update', auth() == this)
+  loginFailed   Int            @default(0) @omit @deny('all', true)
+  media         Media[]
+  group        UserGroup[]
+  role          UserRole
+  refreshTokens RefreshToken[] @omit
+  devices       Device[]       @omit
+  @@unique([email, phone])
+  @@auth
+}
+
+model UserGroup extends Base {
+    name String @unique
+    user User[]
+    permission Permission[]
+}
+
+model Permission extends Base {
+  name           PermissionName // Tên đối tượng kiểm soát quyền
+  permissionType PermissionType // Loại hành động kiểm soát quyền
+  disabled       Boolean        @default(false)
+
+  groups         UserGroup[]
+
+  @@unique([name, permissionType])
+}
+
+model RefreshToken extends Base {
+  token     String   @unique
+  userId    String
+  revoked   Boolean  @default(false)
+  user      User     @relation(fields: [userId], references: [id])
+  deviceId  String
+  device    Device   @relation(fields: [deviceId], references: [id])
+  expiresAt DateTime
+
+  @@unique([userId, deviceId])
+}
+
+model Device extends Base {
+  name         String  //e.g., "iPhone", "Laptop"
+  userId       String
+  user         User           @relation(fields: [userId], references: [id])
+
+  refreshToken RefreshToken[]
+
+  @@unique([userId, name])
+}

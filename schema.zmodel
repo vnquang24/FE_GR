@@ -1,0 +1,17 @@
+import "zmodel/administrative_unit.zmodel"
+import "zmodel/user"
+import "zmodel/app"
+
+datasource db {
+    provider = "postgresql"
+    url      = env("")
+}
+generator client {
+    provider      = "prisma-client-js"
+}
+
+plugin hooks {
+  provider = '@zenstackhq/tanstack-query'
+  target = 'react'
+  output = 'generated/hooks'
+}

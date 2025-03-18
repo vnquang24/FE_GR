@@ -1,0 +1,20 @@
+import 'common/base'
+import 'app'
+import 'category'
+
+model Zone extends Base{
+    name String
+    boundary Json
+    disaster Disaster[]
+    @@allow('all', auth() != null)
+}
+
+model Coordinate extends Base{
+    address String?
+    lat Float
+    lng Float
+
+    disaster     Disaster[]
+    media        Media[]
+    @@allow('all', auth() != null)
+}
