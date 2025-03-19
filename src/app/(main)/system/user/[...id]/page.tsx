@@ -34,16 +34,7 @@ export default function UserDetailPage() {
       </div>
     );
   }
-
-  // Kiểm tra xem có phần tử thứ hai trong mảng id không - ví dụ "edit" trong /user/123/edit
-  const action = params.id[1];
   
-  // Render theo action nếu có
-  if (action === 'edit') {
-    return <UserEditForm user={user} />;
-  }
-  
-  // Mặc định hiển thị thông tin chi tiết
   return (
     <div className="w-full">
       <h1 className="text-2xl font-bold mb-6">Thông tin người dùng</h1>
@@ -94,8 +85,3 @@ export default function UserDetailPage() {
   );
 }
 
-// Component phụ cho chức năng sửa
-function UserEditForm({ user }) {
-  // Code xử lý form sửa thông tin người dùng
-  return <div>Form sửa thông tin người dùng</div>;
-}

@@ -4,7 +4,7 @@ import Header from "@/components/panel/header";
 import Sidebar from "@/components/panel/side-bars";
 import { menuItems } from "@/lib/menu-data";
 import { usePathname } from "next/navigation";
-import  {getUser}  from "@/utils/auth";
+// import  {getUser}  from "@/utils/auth";
 
 export default function MainLayout({
   children,
@@ -12,7 +12,7 @@ export default function MainLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const user = getUser();
+  // const user = getUser();
 
   // Function to find menu item label by pathname
   const findMenuLabel = (path: string): string => {
@@ -30,7 +30,10 @@ export default function MainLayout({
 
     return 'Trang chủ'; // Default fallback
   };
-
+  const user = {
+    name: "Admin",
+    icon: null,
+  };
   return (
     <div className="min-h-screen bg-slate-100 flex gap-4 pr-4">
       <Sidebar />

@@ -43,12 +43,12 @@ export const setUser = (user : User) => {
   localStorage.setItem('user', JSON.stringify(user));
 };
 
-// Hàm lấy thông tin user
-export const getUser = () => {
-  const userStr = localStorage.getItem('user');
-  if (!userStr) return null;
-  return JSON.parse(userStr);
-};
+// // Hàm lấy thông tin user
+// export const getUser = () => {
+//   const userStr = localStorage.getItem('user');
+//   if (!userStr) return null;
+//   return JSON.parse(userStr);
+// };
 
 // Hàm lưu tokens
 export const setTokens = (accessToken: string, refreshToken: string) => {
