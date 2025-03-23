@@ -1,23 +1,25 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import {isTokenValid} from '@/utils/auth';
+import { getCookie } from 'cookies-next';
 
 export function middleware(request: NextRequest) {
     // Kiểm tra nếu đang ở trang chủ
   if (request.nextUrl.pathname === '/') {
-    return NextResponse.redirect(new URL('/login', request.url))
+    return NextResponse.redirect(new URL('auth/login', request.url))
   }
   // Lấy token từ cookies hoặc localStorage
-  const isAuthenticated = request.cookies.get('auth')
-  const isAuthPage = request.nextUrl.pathname.startsWith('/login')
+ 
+  const isAuthPage = request.nextUrl.pathname.startsWith('/auth')
 
   // Nếu đã đăng nhập và cố truy cập trang login
-  if (isAuthenticated && isAuthPage) {
+  if (isTokenValid() && isAuthPage) {
     return NextResponse.redirect(new URL('/home', request.url))
   }
 
   // Nếu chưa đăng nhập và cố truy cập trang được bảo vệ
-  if (!isAuthenticated && !isAuthPage) {
-    return NextResponse.redirect(new URL('/login', request.url))
+  if (!isTokenValid && !isAuthPage) {
+    return NextResponse.redirect(new URL('auth/login', request.url))
   }
 
   return NextResponse.next()

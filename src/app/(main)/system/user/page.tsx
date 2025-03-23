@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Eye, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { useFindManyUser } from '@/generated/index';
+import { useFindManyUser } from '@/generated/hooks/index';
 import { Button } from '@/components/ui/button';
 
 const UserManagePage: React.FC = () => {

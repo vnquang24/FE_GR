@@ -1,5 +1,4 @@
 import { clsx, type ClassValue } from 'clsx'
-import { deleteCookie, getCookies } from 'cookies-next'
 import dayjs, { Dayjs } from 'dayjs'
 import { twMerge } from 'tailwind-merge'
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useFindUniqueUser } from '@/generated/index';
+import { useFindUniqueUser } from '@/generated/hooks/index';
 import { Loader2 } from 'lucide-react';
 
 export default function UserDetailPage() {

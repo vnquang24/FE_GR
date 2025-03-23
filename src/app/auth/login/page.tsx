@@ -1,12 +1,13 @@
 // pages/login.tsx
 'use client';
 
-import React, {useEffect} from 'react';
+import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { authenticate, setAuthenticated, isAuthenticated } from '@/utils/auth';
+import { authenticate, isTokenValid } from '@/utils/auth';
+import Link from 'next/link';
 
 // Định nghĩa schema Zod cho form login
 const loginFormSchema = z.object({
@@ -22,11 +23,11 @@ type LoginFormType = z.infer<typeof loginFormSchema>;
 
 const LoginPage: React.FC = () => {
   const router = useRouter();
-  useEffect(() => {
-    if (isAuthenticated()) {
-      router.push('/home');
-    }
-  }, [router]);
+  // useEffect(() => {
+  //   if (isAuthenticated()) {
+  //     router.push('/home');
+  //   }
+  // }, [router]);
   const isDev = process.env.NODE_ENV === 'development';
 
   // Sử dụng React Hook Form với Zod Resolver
@@ -49,7 +50,6 @@ const LoginPage: React.FC = () => {
 
   const onSubmit = async (data: LoginFormType) => {
     if (await authenticate(data.email, data.password)) {
-      setAuthenticated();
       router.push('/home');
       router.refresh(); // Refresh để đảm bảo middleware được chạy lại
     } else {
@@ -96,6 +96,14 @@ const LoginPage: React.FC = () => {
             {errors.password && (
               <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
             )}
+          </div>
+          <div className="flex justify-between w-full">
+            <div>
+              <Link href="/auth/register" className="text-blue-500 hover:underline">Đăng ký</Link>
+            </div>
+            <div>
+              <Link href="/auth/forgot-password" className="text-blue-500 hover:underline">Quên mật khẩu</Link>
+            </div>
           </div>
 
           {/* Submit button */}
