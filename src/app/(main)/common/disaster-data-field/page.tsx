@@ -8,7 +8,7 @@ const HomePage: React.FC = () => {
 
   const handleLogout = () => {
     logout();
-    router.push('/login');
+    router.push('/auth/login');
   };
 
   return (

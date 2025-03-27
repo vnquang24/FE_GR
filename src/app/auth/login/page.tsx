@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { authenticate, isTokenValid } from '@/utils/auth';
+import { login, isTokenValid } from '@/utils/auth';
 import Link from 'next/link';
 
 // Định nghĩa schema Zod cho form login
@@ -49,7 +49,7 @@ const LoginPage: React.FC = () => {
   }, [isDev, setValue]);
 
   const onSubmit = async (data: LoginFormType) => {
-    if (await authenticate(data.email, data.password)) {
+    if (await login(data.email, data.password)) {
       router.push('/home');
       router.refresh(); // Refresh để đảm bảo middleware được chạy lại
     } else {

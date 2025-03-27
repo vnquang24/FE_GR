@@ -23,15 +23,18 @@ export interface ToastProps extends Omit<ToastOptions, 'type'> {
   type?: ToastType;
   variant?: 'default' | 'destructive'; // Thêm thuộc tính variant
 }
+
 // Component Toast container chính
 export const Toast: React.FC<{ 
   position?: ToastPosition; 
   className?: string;
   theme?: Theme;
+  toastOptions?: ToastOptions;
 }> = ({ 
   position = 'top-center',
   className,
-  theme = 'light'
+  theme = 'light',
+  toastOptions
 }) => {
   return (
     <ToastifyContainer
@@ -47,6 +50,7 @@ export const Toast: React.FC<{
       theme={theme}
       transition={Zoom}
       className={cn('toast-container', className)}
+      {...toastOptions}
     />
   );
 };

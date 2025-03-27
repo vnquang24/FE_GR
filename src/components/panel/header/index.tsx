@@ -16,7 +16,7 @@ const Header: React.FC<HeaderProps> = ({ pathName, user }) => {
 
   const handleLogout = () => {
     logout();
-    router.push('/login');
+    router.push('/auth/login');
   };
 
   const handleProfileClick = () => {

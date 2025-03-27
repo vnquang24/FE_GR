@@ -1,13 +1,17 @@
 import { ChcnContext } from "./chcnContext";
-import { getCookie, setCookie } from "cookies-next"; // Thêm import này
-import { HttpStatusCode } from "axios";
-import { fetchAuthControllerRefreshToken } from "@/generated/api/chcnComponents";
-import { logout } from "@/utils/auth";
+import { getCookie} from "cookies-next"; 
 import { interceptorsResponse } from '@/lib/api/index';
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL; // TODO add your baseUrl
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL; 
+// Danh sách URL không cần authentication header
+const PUBLIC_URL = [
+  '/api/auth/login',
+  '/api/auth/register',
+  '/api/auth/refresh-token'
+];
 export type ErrorWrapper<TError> =
   | TError
   | { status: "unknown"; payload: string };
+
 
 export type ChcnFetcherOptions<TBody, THeaders, TQueryParams, TPathParams> = {
   url: string;
@@ -43,11 +47,15 @@ export async function chcnFetch<
   let error: ErrorWrapper<TError>;
   try {
     const accessToken = typeof window !== 'undefined' ? getCookie('accessToken') : null;
+    const resolvedUrl = resolveUrl(url, queryParams, pathParams);
+    
+    // Kiểm tra xem URL hiện tại có phải là public URL không
+    const isPublicUrl = PUBLIC_URL.some(item => url.includes(item));
     
     const requestHeaders: HeadersInit = {
       "Content-Type": "application/json",
-      // Thêm Authorization header nếu access token tồn tại
-      ...(accessToken ? { "Authorization": `Bearer ${accessToken}` } : {}),
+      // Chỉ thêm Authorization header nếu là private URL và token tồn tại
+      ...(!isPublicUrl && accessToken ? { "Authorization": `Bearer ${accessToken}` } : {}),
       ...headers, // Đảm bảo headers được cung cấp vẫn có thể ghi đè
     };
 

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { authenticate, setAuthenticated, isAuthenticated, register as authRegister } from '@/utils/auth';
+import { register as authRegister } from '@/utils/auth';
 
 // Định nghĩa schema Zod cho form register
 const registerFormSchema = z.object({
@@ -26,12 +26,6 @@ type registerFormType = z.infer<typeof registerFormSchema>;
 
 const registerPage: React.FC = () => {
     const router = useRouter();
-    useEffect(() => {
-        if (isAuthenticated()) {
-            router.push('/home');
-        }
-    }, [router]);
-
     // Sử dụng React Hook Form với Zod Resolver
     const {
         register,
@@ -43,7 +37,6 @@ const registerPage: React.FC = () => {
 
     const onSubmit = async (data: registerFormType) => {
         if (await authRegister(data.email, data.password, data.phone, data.name)){
-            setAuthenticated();
             router.push('/home');
             router.refresh();
         } else {
