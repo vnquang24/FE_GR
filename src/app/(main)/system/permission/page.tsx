@@ -2,8 +2,6 @@
 import React, { useState, ChangeEvent, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { PermissionName, PermissionType } from '@prisma/client';
-import { PlusCircle, Trash2, Save, Edit, Check, X, Eye } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { 
   Table, 
   TableBody, 
@@ -14,18 +12,7 @@ import {
   TableCaption
 } from '@/components/ui/table';
 import { useToast, Toast } from '@/components/ui/toast';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Switch } from '@/components/ui/switch';
 import { 
   useFindManyUserGroup, 
   useCreateUserGroup, 
@@ -42,9 +29,7 @@ import { motion } from 'framer-motion';
 import { PERMISSION_NAMES, PERMISSION_NAMES_VI, PERMISSION_TYPES_VI } from '@/constant';
 
 const PermissionPage: React.FC = () => {
-  const router = useRouter();
   const { toast } = useToast();
-  const [currentGroup, setCurrentGroup] = useState<any>(null);
 
   // Sử dụng các hooks được sinh ra từ ZenStack
   const { data: userGroups = [], isLoading: isLoadingGroups, refetch: refetchUserGroups } = useFindManyUserGroup({
@@ -203,15 +188,12 @@ const PermissionPage: React.FC = () => {
                           
                           return (
                             <TableCell key={`${permKey}-${permType}`} className="text-center">
-                              <label className="relative inline-flex items-center justify-center cursor-pointer">
-                                <input
-                                  type="checkbox"
+                              <div className="flex items-center justify-center">
+                                <Switch
                                   checked={!!isGranted}
-                                  onChange={() => perm && togglePermission(group.id, perm.id)}
-                                  className="sr-only peer"
+                                  onCheckedChange={() => perm && togglePermission(group.id, perm.id)}
                                 />
-                                <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                              </label>
+                              </div>
                             </TableCell>
                           );
                         })}
