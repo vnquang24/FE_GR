@@ -9,8 +9,8 @@ abstract model AdministrativeUnit extends Base {
 }
 
 model Province extends AdministrativeUnit {
-    name String @unique
-
+    name String
+    id_province String @unique
     district District[]
     disaster Disaster[]   
 }
@@ -19,16 +19,15 @@ model District extends AdministrativeUnit {
     name String
     province Province @relation (fields: [provinceId], references: [id])
     provinceId String
-    
+    id_district String @unique
     commune Commune[]
     disaster Disaster[]
-    @@unique([name, provinceId])
 }
 
 model Commune extends AdministrativeUnit {
-    name String @unique
+    name String
     district District @relation(fields: [districtId], references: [id])
     districtId String
+    id_commune String @unique
     disaster Disaster[]
-    @@unique([name, districtId])
 }

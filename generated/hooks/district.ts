@@ -328,7 +328,7 @@ export function useSuspenseCountDistrict<TArgs extends Prisma.DistrictCountArgs,
     return useSuspenseModelQuery<TQueryFnData, TData, TError>('District', `${endpoint}/district/count`, args, options, fetch);
 }
 
-export function useCheckDistrict<TError = DefaultError>(args: { operation: PolicyCrudKind; where?: { id?: string; description?: string; name?: string; provinceId?: string }; }, options?: (Omit<UseQueryOptions<boolean, TError, boolean>, 'queryKey'> & ExtraQueryOptions)) {
+export function useCheckDistrict<TError = DefaultError>(args: { operation: PolicyCrudKind; where?: { id?: string; description?: string; name?: string; provinceId?: string; id_district?: string }; }, options?: (Omit<UseQueryOptions<boolean, TError, boolean>, 'queryKey'> & ExtraQueryOptions)) {
     const { endpoint, fetch } = getHooksContext();
     return useModelQuery<boolean, boolean, TError>('District', `${endpoint}/district/check`, args, options, fetch);
 }

@@ -3,6 +3,7 @@ enum PermissionName {
   Category
   Disaster
   Media
+  RescueTypeOnDisaster
 }
 
 enum UserRole {

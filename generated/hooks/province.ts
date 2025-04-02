@@ -328,7 +328,7 @@ export function useSuspenseCountProvince<TArgs extends Prisma.ProvinceCountArgs,
     return useSuspenseModelQuery<TQueryFnData, TData, TError>('Province', `${endpoint}/province/count`, args, options, fetch);
 }
 
-export function useCheckProvince<TError = DefaultError>(args: { operation: PolicyCrudKind; where?: { id?: string; description?: string; name?: string }; }, options?: (Omit<UseQueryOptions<boolean, TError, boolean>, 'queryKey'> & ExtraQueryOptions)) {
+export function useCheckProvince<TError = DefaultError>(args: { operation: PolicyCrudKind; where?: { id?: string; description?: string; name?: string; id_province?: string }; }, options?: (Omit<UseQueryOptions<boolean, TError, boolean>, 'queryKey'> & ExtraQueryOptions)) {
     const { endpoint, fetch } = getHooksContext();
     return useModelQuery<boolean, boolean, TError>('Province', `${endpoint}/province/check`, args, options, fetch);
 }

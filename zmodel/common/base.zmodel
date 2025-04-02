@@ -9,3 +9,15 @@ abstract model Base {
   @@allow('all', auth().role == 'ADMIN')
   @@allow('read', auth() != null)
 }
+
+// Tạo model cơ sở riêng cho dữ liệu nhạy cảm
+abstract model SensitiveBase {
+  id String @id @default(cuid())
+  description String @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deleted DateTime? @omit
+
+  @@deny('read', deleted != null)
+  @@allow('all', auth().role == 'ADMIN')
+}

@@ -328,7 +328,7 @@ export function useSuspenseCountCommune<TArgs extends Prisma.CommuneCountArgs, T
     return useSuspenseModelQuery<TQueryFnData, TData, TError>('Commune', `${endpoint}/commune/count`, args, options, fetch);
 }
 
-export function useCheckCommune<TError = DefaultError>(args: { operation: PolicyCrudKind; where?: { id?: string; description?: string; name?: string; districtId?: string }; }, options?: (Omit<UseQueryOptions<boolean, TError, boolean>, 'queryKey'> & ExtraQueryOptions)) {
+export function useCheckCommune<TError = DefaultError>(args: { operation: PolicyCrudKind; where?: { id?: string; description?: string; name?: string; districtId?: string; id_commune?: string }; }, options?: (Omit<UseQueryOptions<boolean, TError, boolean>, 'queryKey'> & ExtraQueryOptions)) {
     const { endpoint, fetch } = getHooksContext();
     return useModelQuery<boolean, boolean, TError>('Commune', `${endpoint}/commune/check`, args, options, fetch);
 }

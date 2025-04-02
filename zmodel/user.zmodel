@@ -10,7 +10,7 @@ model User extends Base {
   locked        Boolean        @default(false) @deny('update', auth() == this)
   loginFailed   Int            @default(0) @omit @deny('all', true)
   media         Media[]
-  group        UserGroup[]
+  group         UserGroup[]
   role          UserRole
   refreshTokens RefreshToken[] @omit
   devices       Device[]       @omit
@@ -19,9 +19,9 @@ model User extends Base {
 }
 
 model UserGroup extends Base {
-    name String @unique
-    user User[]
-    permission Permission[]
+  name       String       @unique
+  user       User[]
+  permission Permission[]
 }
 
 model Permission extends Base {
@@ -50,7 +50,10 @@ model Device extends Base {
   name         String  //e.g., "iPhone", "Laptop"
   userId       String
   user         User           @relation(fields: [userId], references: [id])
-
+  lastActive   DateTime?
+  isActive     Boolean        @default(true)
+  ipAddress    String?
+  location     String?
   refreshToken RefreshToken[]
 
   @@unique([userId, name])

@@ -33,6 +33,9 @@ const metadata = {
                 }, name: {
                     name: "name",
                     type: "String",
+                }, id_province: {
+                    name: "id_province",
+                    type: "String",
                 }, district: {
                     name: "district",
                     type: "District",
@@ -52,9 +55,9 @@ const metadata = {
                 id: {
                     name: "id",
                     fields: ["id"]
-                }, name: {
-                    name: "name",
-                    fields: ["name"]
+                }, id_province: {
+                    name: "id_province",
+                    fields: ["id_province"]
                 },
             }
             ,
@@ -98,6 +101,9 @@ const metadata = {
                     type: "String",
                     isForeignKey: true,
                     relationField: 'province',
+                }, id_district: {
+                    name: "id_district",
+                    type: "String",
                 }, commune: {
                     name: "commune",
                     type: "Commune",
@@ -117,9 +123,9 @@ const metadata = {
                 id: {
                     name: "id",
                     fields: ["id"]
-                }, name_provinceId: {
-                    name: "name_provinceId",
-                    fields: ["name", "provinceId"]
+                }, id_district: {
+                    name: "id_district",
+                    fields: ["id_district"]
                 },
             }
             ,
@@ -163,6 +169,9 @@ const metadata = {
                     type: "String",
                     isForeignKey: true,
                     relationField: 'district',
+                }, id_commune: {
+                    name: "id_commune",
+                    type: "String",
                 }, disaster: {
                     name: "disaster",
                     type: "Disaster",
@@ -176,12 +185,9 @@ const metadata = {
                 id: {
                     name: "id",
                     fields: ["id"]
-                }, name: {
-                    name: "name",
-                    fields: ["name"]
-                }, name_districtId: {
-                    name: "name_districtId",
-                    fields: ["name", "districtId"]
+                }, id_commune: {
+                    name: "id_commune",
+                    fields: ["id_commune"]
                 },
             }
             ,
@@ -1208,6 +1214,22 @@ const metadata = {
                     backLink: 'devices',
                     isRelationOwner: true,
                     foreignKeyMapping: { "id": "userId" },
+                }, lastActive: {
+                    name: "lastActive",
+                    type: "DateTime",
+                    isOptional: true,
+                }, isActive: {
+                    name: "isActive",
+                    type: "Boolean",
+                    attributes: [{ "name": "@default", "args": [{ "value": true }] }],
+                }, ipAddress: {
+                    name: "ipAddress",
+                    type: "String",
+                    isOptional: true,
+                }, location: {
+                    name: "location",
+                    type: "String",
+                    isOptional: true,
                 }, refreshToken: {
                     name: "refreshToken",
                     type: "RefreshToken",

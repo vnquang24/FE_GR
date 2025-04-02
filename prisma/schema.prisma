@@ -4,307 +4,311 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 datasource db {
-    provider = "postgresql"
-    url = env("")
+  provider = "postgresql"
+  url      = env("")
 }
 
 generator client {
-    provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 enum PermissionName {
-    AdministrativeUnit
-    Category
-    Disaster
-    Media
+  AdministrativeUnit
+  Category
+  Disaster
+  Media
+  RescueTypeOnDisaster
 }
 
 enum UserRole {
-    ADMIN
-    RESIDENT
-    STAFF
+  ADMIN
+  RESIDENT
+  STAFF
 }
 
 enum PermissionType {
-    CREATE
-    READ
-    UPDATE
-    DELETE
+  CREATE
+  READ
+  UPDATE
+  DELETE
 }
 
 enum MediaType {
-    IMAGE
-    VIDEO
-    AUDIO
+  IMAGE
+  VIDEO
+  AUDIO
 }
 
 model Province {
-    id String @id() @default(cuid())
-    description String @default("")
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt()
-    deleted DateTime?
-    name String @unique()
-    district District[]
-    disaster Disaster[]
+  id          String     @id() @default(cuid())
+  description String     @default("")
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt()
+  deleted     DateTime?
+  name        String
+  id_province String     @unique()
+  district    District[]
+  disaster    Disaster[]
 }
 
 model District {
-    id String @id() @default(cuid())
-    description String @default("")
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt()
-    deleted DateTime?
-    name String
-    province Province @relation(fields: [provinceId], references: [id])
-    provinceId String
-    commune Commune[]
-    disaster Disaster[]
-
-    @@unique([name, provinceId])
+  id          String     @id() @default(cuid())
+  description String     @default("")
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt()
+  deleted     DateTime?
+  name        String
+  province    Province   @relation(fields: [provinceId], references: [id])
+  provinceId  String
+  id_district String     @unique()
+  commune     Commune[]
+  disaster    Disaster[]
 }
 
 model Commune {
-    id String @id() @default(cuid())
-    description String @default("")
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt()
-    deleted DateTime?
-    name String @unique()
-    district District @relation(fields: [districtId], references: [id])
-    districtId String
-    disaster Disaster[]
-
-    @@unique([name, districtId])
+  id          String     @id() @default(cuid())
+  description String     @default("")
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt()
+  deleted     DateTime?
+  name        String
+  district    District   @relation(fields: [districtId], references: [id])
+  districtId  String
+  id_commune  String     @unique()
+  disaster    Disaster[]
 }
 
 model Disaster {
-    id String @id() @default(cuid())
-    description String @default("")
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt()
-    deleted DateTime?
-    name String @unique()
-    disasterType DisasterType @relation(fields: [disasterTypeId], references: [id])
-    disasterTypeId String
-    priorityLevel PriorityLevel @relation(fields: [priorityLevelId], references: [id])
-    priorityLevelId String
-    emergencyLevel EmergencyLevel @relation(fields: [emergencyLevelId], references: [id])
-    emergencyLevelId String
-    province Province[]
-    district District[]
-    commune Commune[]
-    zone Zone[]
-    media Media[]
-    coordinate Coordinate @relation(fields: [coordinateId], references: [id])
-    coordinateId String
-    dataFields DataFieldOnDisaster[]
-    rescueTypes RescueTypeOnDisaster[]
+  id               String                 @id() @default(cuid())
+  description      String                 @default("")
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt()
+  deleted          DateTime?
+  name             String                 @unique()
+  disasterType     DisasterType           @relation(fields: [disasterTypeId], references: [id])
+  disasterTypeId   String
+  priorityLevel    PriorityLevel          @relation(fields: [priorityLevelId], references: [id])
+  priorityLevelId  String
+  emergencyLevel   EmergencyLevel         @relation(fields: [emergencyLevelId], references: [id])
+  emergencyLevelId String
+  province         Province[]
+  district         District[]
+  commune          Commune[]
+  zone             Zone[]
+  media            Media[]
+  coordinate       Coordinate             @relation(fields: [coordinateId], references: [id])
+  coordinateId     String
+  dataFields       DataFieldOnDisaster[]
+  rescueTypes      RescueTypeOnDisaster[]
 }
 
 model DataFieldOnDisaster {
-    id String @id() @default(cuid())
-    description String @default("")
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt()
-    deleted DateTime?
-    disaster Disaster @relation(fields: [disasterId], references: [id])
-    disasterId String
-    dataField DataField @relation(fields: [dataFieldId], references: [id])
-    dataFieldId String
-    value Float
+  id          String    @id() @default(cuid())
+  description String    @default("")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt()
+  deleted     DateTime?
+  disaster    Disaster  @relation(fields: [disasterId], references: [id])
+  disasterId  String
+  dataField   DataField @relation(fields: [dataFieldId], references: [id])
+  dataFieldId String
+  value       Float
 
-    @@unique([disasterId, dataFieldId])
+  @@unique([disasterId, dataFieldId])
 }
 
 model RescueTypeOnDisaster {
-    id String @id() @default(cuid())
-    description String @default("")
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt()
-    deleted DateTime?
-    disaster Disaster @relation(fields: [disasterId], references: [id])
-    disasterId String
-    rescueType RescueType @relation(fields: [rescueTypeId], references: [id])
-    rescueTypeId String
-    value Float
-    unit DataField @relation(fields: [unitId], references: [id])
-    unitId String
-    startDate DateTime?
-    endDate DateTime?
+  id           String     @id() @default(cuid())
+  description  String     @default("")
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt()
+  deleted      DateTime?
+  disaster     Disaster   @relation(fields: [disasterId], references: [id])
+  disasterId   String
+  rescueType   RescueType @relation(fields: [rescueTypeId], references: [id])
+  rescueTypeId String
+  value        Float
+  unit         DataField  @relation(fields: [unitId], references: [id])
+  unitId       String
+  startDate    DateTime?
+  endDate      DateTime?
 
-    @@unique([disasterId, rescueTypeId])
+  @@unique([disasterId, rescueTypeId])
 }
 
 model Media {
-    id String @id() @default(cuid())
-    description String @default("")
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt()
-    deleted DateTime?
-    url String
-    mediaType MediaType
-    disaster Disaster @relation(fields: [disasterId], references: [id])
-    disasterId String
-    coordinates Coordinate @relation(fields: [coordinatesId], references: [id])
-    coordinatesId String
-    user User @relation(fields: [userId], references: [id])
-    userId String
+  id            String     @id() @default(cuid())
+  description   String     @default("")
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt()
+  deleted       DateTime?
+  url           String
+  mediaType     MediaType
+  disaster      Disaster   @relation(fields: [disasterId], references: [id])
+  disasterId    String
+  coordinates   Coordinate @relation(fields: [coordinatesId], references: [id])
+  coordinatesId String
+  user          User       @relation(fields: [userId], references: [id])
+  userId        String
 }
 
 model DisasterType {
-    id String @id() @default(cuid())
-    description String @default("")
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt()
-    deleted DateTime?
-    name String @unique()
-    disaster Disaster[]
+  id          String     @id() @default(cuid())
+  description String     @default("")
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt()
+  deleted     DateTime?
+  name        String     @unique()
+  disaster    Disaster[]
 }
 
 model PriorityLevel {
-    id String @id() @default(cuid())
-    description String @default("")
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt()
-    deleted DateTime?
-    name String @unique()
-    disaster Disaster[]
+  id          String     @id() @default(cuid())
+  description String     @default("")
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt()
+  deleted     DateTime?
+  name        String     @unique()
+  disaster    Disaster[]
 }
 
 model EmergencyLevel {
-    id String @id() @default(cuid())
-    description String @default("")
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt()
-    deleted DateTime?
-    name String @unique()
-    disaster Disaster[]
+  id          String     @id() @default(cuid())
+  description String     @default("")
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt()
+  deleted     DateTime?
+  name        String     @unique()
+  disaster    Disaster[]
 }
 
 model DataField {
-    id String @id() @default(cuid())
-    description String @default("")
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt()
-    deleted DateTime?
-    code String @unique()
-    name String
-    unit String
-    rescueTypeOnDisaster RescueTypeOnDisaster[]
-    parentId String
-    dataFieldGroup String
-    disaster DataFieldOnDisaster[]
+  id                   String                 @id() @default(cuid())
+  description          String                 @default("")
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt()
+  deleted              DateTime?
+  code                 String                 @unique()
+  name                 String
+  unit                 String
+  rescueTypeOnDisaster RescueTypeOnDisaster[]
+  parentId             String
+  dataFieldGroup       String
+  disaster             DataFieldOnDisaster[]
 }
 
 model RescueType {
-    id String @id() @default(cuid())
-    description String @default("")
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt()
-    deleted DateTime?
-    name String
-    unit String
-    disaster RescueTypeOnDisaster[]
+  id          String                 @id() @default(cuid())
+  description String                 @default("")
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt()
+  deleted     DateTime?
+  name        String
+  unit        String
+  disaster    RescueTypeOnDisaster[]
 }
 
 model Zone {
-    id String @id() @default(cuid())
-    description String @default("")
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt()
-    deleted DateTime?
-    name String
-    boundary Json
-    disaster Disaster[]
+  id          String     @id() @default(cuid())
+  description String     @default("")
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt()
+  deleted     DateTime?
+  name        String
+  boundary    Json
+  disaster    Disaster[]
 }
 
 model Coordinate {
-    id String @id() @default(cuid())
-    description String @default("")
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt()
-    deleted DateTime?
-    address String?
-    lat Float
-    lng Float
-    disaster Disaster[]
-    media Media[]
+  id          String     @id() @default(cuid())
+  description String     @default("")
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt()
+  deleted     DateTime?
+  address     String?
+  lat         Float
+  lng         Float
+  disaster    Disaster[]
+  media       Media[]
 }
 
 model User {
-    id String @id() @default(cuid())
-    description String @default("")
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt()
-    deleted DateTime?
-    email String @unique()
-    phone String? @unique()
-    password String
-    name String
-    locked Boolean @default(false)
-    loginFailed Int @default(0)
-    media Media[]
-    group UserGroup[]
-    role UserRole
-    refreshTokens RefreshToken[]
-    devices Device[]
+  id            String         @id() @default(cuid())
+  description   String         @default("")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt()
+  deleted       DateTime?
+  email         String         @unique()
+  phone         String?        @unique()
+  password      String
+  name          String
+  locked        Boolean        @default(false)
+  loginFailed   Int            @default(0)
+  media         Media[]
+  group         UserGroup[]
+  role          UserRole
+  refreshTokens RefreshToken[]
+  devices       Device[]
 
-    @@unique([email, phone])
+  @@unique([email, phone])
 }
 
 model UserGroup {
-    id String @id() @default(cuid())
-    description String @default("")
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt()
-    deleted DateTime?
-    name String @unique()
-    user User[]
-    permission Permission[]
+  id          String       @id() @default(cuid())
+  description String       @default("")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt()
+  deleted     DateTime?
+  name        String       @unique()
+  user        User[]
+  permission  Permission[]
 }
 
 model Permission {
-    id String @id() @default(cuid())
-    description String @default("")
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt()
-    deleted DateTime?
-    name PermissionName
-    permissionType PermissionType
-    disabled Boolean @default(false)
-    groups UserGroup[]
+  id             String         @id() @default(cuid())
+  description    String         @default("")
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt()
+  deleted        DateTime?
+  name           PermissionName
+  permissionType PermissionType
+  disabled       Boolean        @default(false)
+  groups         UserGroup[]
 
-    @@unique([name, permissionType])
+  @@unique([name, permissionType])
 }
 
 model RefreshToken {
-    id String @id() @default(cuid())
-    description String @default("")
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt()
-    deleted DateTime?
-    token String @unique()
-    userId String
-    revoked Boolean @default(false)
-    user User @relation(fields: [userId], references: [id])
-    deviceId String
-    device Device @relation(fields: [deviceId], references: [id])
-    expiresAt DateTime
+  id          String    @id() @default(cuid())
+  description String    @default("")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt()
+  deleted     DateTime?
+  token       String    @unique()
+  userId      String
+  revoked     Boolean   @default(false)
+  user        User      @relation(fields: [userId], references: [id])
+  deviceId    String
+  device      Device    @relation(fields: [deviceId], references: [id])
+  expiresAt   DateTime
 
-    @@unique([userId, deviceId])
+  @@unique([userId, deviceId])
 }
 
 model Device {
-    id String @id() @default(cuid())
-    description String @default("")
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt()
-    deleted DateTime?
-    name String
-    userId String
-    user User @relation(fields: [userId], references: [id])
-    refreshToken RefreshToken[]
+  id           String         @id() @default(cuid())
+  description  String         @default("")
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt()
+  deleted      DateTime?
+  name         String
+  userId       String
+  user         User           @relation(fields: [userId], references: [id])
+  lastActive   DateTime?
+  isActive     Boolean        @default(true)
+  ipAddress    String?
+  location     String?
+  refreshToken RefreshToken[]
 
-    @@unique([userId, name])
+  @@unique([userId, name])
 }

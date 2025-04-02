@@ -328,7 +328,7 @@ export function useSuspenseCountDevice<TArgs extends Prisma.DeviceCountArgs, TQu
     return useSuspenseModelQuery<TQueryFnData, TData, TError>('Device', `${endpoint}/device/count`, args, options, fetch);
 }
 
-export function useCheckDevice<TError = DefaultError>(args: { operation: PolicyCrudKind; where?: { id?: string; description?: string; name?: string; userId?: string }; }, options?: (Omit<UseQueryOptions<boolean, TError, boolean>, 'queryKey'> & ExtraQueryOptions)) {
+export function useCheckDevice<TError = DefaultError>(args: { operation: PolicyCrudKind; where?: { id?: string; description?: string; name?: string; userId?: string; isActive?: boolean; ipAddress?: string; location?: string }; }, options?: (Omit<UseQueryOptions<boolean, TError, boolean>, 'queryKey'> & ExtraQueryOptions)) {
     const { endpoint, fetch } = getHooksContext();
     return useModelQuery<boolean, boolean, TError>('Device', `${endpoint}/device/check`, args, options, fetch);
 }

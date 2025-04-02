@@ -7,20 +7,20 @@ import 'user'
 // Logic rescue type : 1 thảm họa có thể có nhiều loại cứu hộ bao gồm cả người, tiền và cả trang thiết bị
 // Bảng trung gian của Disaster và RescueType sẽ là nơi lưu cụ thể thông tin và số lượng của loại cứu hộ đó
 model Disaster extends Base {
-    name String @unique
-    disasterType DisasterType @relation(fields: [disasterTypeId], references: [id])
-    disasterTypeId String
-    priorityLevel PriorityLevel @relation(fields: [priorityLevelId], references: [id])
-    priorityLevelId String
-    emergencyLevel EmergencyLevel @relation(fields: [emergencyLevelId], references: [id])
+    name             String                 @unique
+    disasterType     DisasterType           @relation(fields: [disasterTypeId], references: [id])
+    disasterTypeId   String
+    priorityLevel    PriorityLevel          @relation(fields: [priorityLevelId], references: [id])
+    priorityLevelId  String
+    emergencyLevel   EmergencyLevel         @relation(fields: [emergencyLevelId], references: [id])
     emergencyLevelId String
-    province        Province[]
-    district        District[]
-    commune         Commune[]
+    province         Province[]
+    district         District[]
+    commune          Commune[]
     zone             Zone[]
     media            Media[]
-    coordinate      Coordinate            @relation(fields: [coordinateId], references: [id])
-    coordinateId    String    
+    coordinate       Coordinate             @relation(fields: [coordinateId], references: [id])
+    coordinateId     String
     dataFields       DataFieldOnDisaster[]
     rescueTypes      RescueTypeOnDisaster[]
 
@@ -30,40 +30,42 @@ model Disaster extends Base {
 }
 
 model DataFieldOnDisaster extends Base {
-    disaster Disaster @relation(fields: [disasterId], references: [id])
-    disasterId String
-    dataField  DataField @relation(fields: [dataFieldId], references: [id])
+    disaster    Disaster  @relation(fields: [disasterId], references: [id])
+    disasterId  String
+    dataField   DataField @relation(fields: [dataFieldId], references: [id])
     dataFieldId String
-    value Float
+    value       Float
     @@unique([disasterId, dataFieldId])
     @@allow('all', check(disaster, 'create') || check(disaster, 'update') || check(disaster, 'delete'))
-
 }
 
-model RescueTypeOnDisaster extends Base {
-    disaster Disaster @relation(fields: [disasterId], references: [id])
-    disasterId String
-    rescueType RescueType @relation(fields: [rescueTypeId], references: [id])
+model RescueTypeOnDisaster extends SensitiveBase {
+    disaster     Disaster   @relation(fields: [disasterId], references: [id])
+    disasterId   String
+    rescueType   RescueType @relation(fields: [rescueTypeId], references: [id])
     rescueTypeId String
-    value Float
-    unit DataField @relation(fields: [unitId], references: [id])
-    unitId String
-    startDate DateTime?
-    endDate DateTime?
+    value        Float
+    unit         DataField  @relation(fields: [unitId], references: [id])
+    unitId       String
+    startDate    DateTime?
+    endDate      DateTime?
     @@unique([disasterId, rescueTypeId])
-    @@allow('all', check(disaster, 'create') || check(disaster, 'update') || check(disaster, 'delete'))
+    @@allow('create', auth().group?[permission?[name == RescueTypeOnDisaster && permissionType == CREATE && !disabled]])
+    @@allow('read', auth().group?[permission?[name == RescueTypeOnDisaster && permissionType == READ && !disabled]])
+    @@allow('update', auth().group?[permission?[name == RescueTypeOnDisaster && permissionType == UPDATE && !disabled]])
+    @@allow('delete', auth().group?[permission?[name == RescueTypeOnDisaster && permissionType == DELETE && !disabled]])
 }
 
 model Media  extends Base {
-  url           String
-  mediaType     MediaType
-  disaster      Disaster    @relation(fields: [disasterId], references: [id])
-  disasterId    String
-  coordinates   Coordinate @relation(fields: [coordinatesId], references: [id])
-  coordinatesId String
-  user          User        @relation(fields: [userId], references: [id])
-  userId        String
-  @@allow('create', auth().group?[permission?[name == Media && permissionType == CREATE && !disabled]])
-  @@allow('update', auth().group?[permission?[(name == Media && permissionType == UPDATE) || (name == Media && permissionType == DELETE) && !disabled]])
-  @@allow('delete', auth().group?[permission?[name == Media && permissionType == DELETE]])
+    url           String
+    mediaType     MediaType
+    disaster      Disaster   @relation(fields: [disasterId], references: [id])
+    disasterId    String
+    coordinates   Coordinate @relation(fields: [coordinatesId], references: [id])
+    coordinatesId String
+    user          User       @relation(fields: [userId], references: [id])
+    userId        String
+    @@allow('create', auth().group?[permission?[name == Media && permissionType == CREATE && !disabled]])
+    @@allow('update', auth().group?[permission?[(name == Media && permissionType == UPDATE) || (name == Media && permissionType == DELETE) && !disabled]])
+    @@allow('delete', auth().group?[permission?[name == Media && permissionType == DELETE]])
 }
