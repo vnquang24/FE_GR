@@ -97,11 +97,6 @@ import {
           icon: CircleDot
         },
         {
-          label: 'Trường thông tin thảm họa',
-          pathname: '/common/disaster-data-field',
-          icon: CircleDot
-        },
-        {
           label: 'Loại nguồn lực cứu hộ cứu nạn',
           pathname: '/common/rescue-resource-type',
           icon: CircleDot
@@ -109,6 +104,16 @@ import {
         {
           label: 'Đơn vị hành chính',
           pathname: '/common/administrative-unit',
+          icon: CircleDot
+        },
+        {
+          label: 'Trường thông tin thảm họa',
+          pathname: '/common/disaster-data-field',
+          icon: CircleDot
+        },
+        {
+          label: 'Trường thông tin dữ liệu',
+          pathname: '/common/data-field',
           icon: CircleDot
         }
       ],

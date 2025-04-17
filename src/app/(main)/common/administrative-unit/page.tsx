@@ -231,9 +231,9 @@ const AdministrativeUnitPage: React.FC = () => {
   }, [communeSearch]);
   
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-3">
       {/* Header với thông tin đã chọn */}
-      <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-4 rounded-lg mb-6 shadow-lg">
+      <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-4 rounded-lg mb-3 shadow-lg">
         <h1 className="text-2xl font-bold text-white mb-2">Quản lý Đơn vị Hành chính</h1>
         <div className="flex items-center space-x-2 text-white">
           {selectedProvinceName ? (
@@ -269,11 +269,11 @@ const AdministrativeUnitPage: React.FC = () => {
         </div>
       </div>
       
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-3 gap-4">
         {/* Cột Tỉnh/Thành phố */}
         <Card className="border-blue-200 shadow-md hover:shadow-lg transition-shadow duration-300">
           <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 border-b">
-            <CardTitle className="flex items-center text-blue-700">
+            <CardTitle className="flex items-center text-blue-700 mb-2">
               <MapPin className="h-5 w-5 mr-2" />
               Tỉnh/Thành phố
             </CardTitle>
@@ -374,7 +374,7 @@ const AdministrativeUnitPage: React.FC = () => {
         {/* Cột Quận/Huyện */}
         <Card className={`border-indigo-200 shadow-md hover:shadow-lg transition-shadow duration-300 ${!selectedProvinceId ? 'opacity-75' : ''}`}>
           <CardHeader className="bg-gradient-to-r from-indigo-50 to-indigo-100 border-b">
-            <CardTitle className="flex items-center text-indigo-700">
+            <CardTitle className="flex items-center text-indigo-700 mb-2">
               <Building2 className="h-5 w-5 mr-2" />
               Quận/Huyện
             </CardTitle>
@@ -481,9 +481,9 @@ const AdministrativeUnitPage: React.FC = () => {
         {/* Cột Phường/Xã */}
         <Card className={`border-purple-200 shadow-md hover:shadow-lg transition-shadow duration-300 ${!selectedDistrictId ? 'opacity-75' : ''}`}>
           <CardHeader className="bg-gradient-to-r from-purple-50 to-purple-100 border-b">
-            <CardTitle className="flex items-center text-purple-700">
+            <CardTitle className="flex items-center text-purple-700 mb-2">
               <Home className="h-5 w-5 mr-2" />
-              Phường/Xã
+              Phường/Xã/Thị trấn
             </CardTitle>
             <div className="relative mt-2">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -519,7 +519,7 @@ const AdministrativeUnitPage: React.FC = () => {
                     onClick={() => handleCommuneSelect(commune.id, commune.name)}
                   >
                     {editingCommuneId === commune.id ? (
-                      <div className="flex items-center w-full">
+                      <div className="flex items-center w-full"> 
                         <Input
                           value={editingName}
                           onChange={(e) => setEditingName(e.target.value)}
