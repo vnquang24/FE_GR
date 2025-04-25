@@ -1,29 +1,28 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableHead,
-  TableRow,
   TableCell,
+  TableRow,
+  TableWrapper
 } from '@/components/ui/table';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Edit, Trash2, AlertTriangle, Save, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useFindManyRescueType, useCreateRescueType, useUpdateRescueType, useDeleteRescueType } from '@/generated/hooks';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter,
-  DialogDescription
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Plus, Search, Edit, Trash2, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useFindManyRescueType, useDeleteRescueType } from '@/generated/hooks';
+import { ConfirmDialog } from '@/components/ui/dialog';
 import { toast } from '@/components/ui/toast';
+import DialogCreateUpdateRescueResourceType from '@/components/common/dialog-create-update-rescue-resource-type';
+import { z } from 'zod';
+
+export const rescueTypeSchema = z.object({
+  id: z.string(),
+  name: z.string().min(1, { message: 'Tên phương thức cứu hộ không được để trống' }),
+  description: z.string().optional(),
+  unit: z.string().optional(),
+});
+
+export type RescueTypeFormValues = z.infer<typeof rescueTypeSchema>;
 
 const RescueResourceTypePage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -31,18 +30,13 @@ const RescueResourceTypePage: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [selectedRescueType, setSelectedRescueType] = useState<{id: string, name: string, description: string, unit: string | null}>({
+  const [selectedRescueType, setSelectedRescueType] = useState<RescueTypeFormValues>({
     id: '',
     name: '',
     description: '',
     unit: ''
   });
-  const [newRescueType, setNewRescueType] = useState({
-    name: '',
-    description: '',
-    unit: ''
-  });
-  
+
   // State cho phân trang
   const [currentPage, setCurrentPage] = useState(0);
   const ITEMS_PER_PAGE = 10;
@@ -94,131 +88,116 @@ const RescueResourceTypePage: React.FC = () => {
     }
   };
 
-  const createRescueTypeMutation = useCreateRescueType({
-    onSuccess: () => {
-      refetch();
-    }
-  });
-  const updateRescueTypeMutation = useUpdateRescueType({
-    onSuccess: () => {
-      refetch();
-    }
-  });
   const deleteRescueTypeMutation = useDeleteRescueType({
     onSuccess: () => {
-      refetch();
-    }
-  });
-
-  const handleOpenAddModal = () => {
-    setNewRescueType({ name: '', description: '', unit: '' });
-    setIsAddModalOpen(true);
-  };
-
-  const handleCreateRescueType = async () => {
-    if (!newRescueType.name.trim()) {
-      toast.error({
-        title: "Lỗi",
-        description: "Tên phương thức cứu hộ không được để trống"
-      });
-      return;
-    }
-
-    try {
-      await createRescueTypeMutation.mutateAsync({
-        data: {
-          name: newRescueType.name,
-          description: newRescueType.description || undefined,
-          unit: newRescueType.unit || ''
-        }
-      });
-      
-      toast.success({
-        title: "Thành công",
-        description: "Đã thêm độ ưu tiên mới"
-      });
-      
-      setIsAddModalOpen(false);
-    } catch (error) {
-      toast.error({
-        title: "Lỗi",
-        description: "Không thể thêm độ ưu tiên. Vui lòng thử lại sau."
-      });
-      console.error("Lỗi khi thêm độ ưu tiên:", error);
-    }
-  };
-
-  const handleEdit = (RescueType: {id: string, name: string, description: string, unit: string | null}) => {
-    setSelectedRescueType(RescueType);
-    setIsEditModalOpen(true);
-  };
-
-  const handleUpdateRescueType = async () => {
-    if (!selectedRescueType.name.trim()) {
-      toast.error({
-        title: "Lỗi",
-        description: "Tên độ ưu tiên không được để trống"
-      });
-      return;
-    }
-
-    try {
-      await updateRescueTypeMutation.mutateAsync({
-        where: { id: selectedRescueType.id },
-        data: {
-          name: selectedRescueType.name,
-          description: selectedRescueType.description || undefined
-        }
-      });
-      
-      toast.success({
-        title: "Thành công",
-        description: "Đã cập nhật độ ưu tiên"
-      });
-      
-      setIsEditModalOpen(false);
-    } catch (error) {
-      toast.error({
-        title: "Lỗi",
-        description: "Không thể cập nhật độ ưu tiên. Vui lòng thử lại sau."
-      });
-      console.error("Lỗi khi cập nhật độ ưu tiên:", error);
-    }
-  };
-
-  const handleOpenDeleteModal = (RescueType: {id: string, name: string, description: string, unit: string | null}) => {
-    setSelectedRescueType(RescueType);
-    setIsDeleteModalOpen(true);
-  };
-
-  const handleDeleteRescueType = async () => {
-    try {
-      await deleteRescueTypeMutation.mutateAsync({
-        where: { id: selectedRescueType.id }
-      });
-      
       toast.success({
         title: "Thành công",
         description: "Đã xóa phương thức cứu hộ"
       });
-      
       setIsDeleteModalOpen(false);
-    } catch (error) {
+      refetch();
+    },
+    onError: (error) => {
       toast.error({
         title: "Lỗi",
-        description: "Không thể xóa độ ưu tiên. Vui lòng thử lại sau."
+        description: "Không thể xóa phương thức cứu hộ. Vui lòng thử lại sau."
       });
-      console.error("Lỗi khi xóa độ ưu tiên:", error);
+      console.error("Lỗi khi xóa phương thức cứu hộ:", error);
+    }
+  });
+
+  const handleOpenAddEditModal = (rescueType: RescueTypeFormValues) => {
+    if (rescueType.id === '') {
+      setIsAddModalOpen(true);
+    } else {
+      setSelectedRescueType(rescueType);
+      setIsEditModalOpen(true);
     }
   };
+  const handleOpenDeleteModal = (rescueType: RescueTypeFormValues) => {
+    setSelectedRescueType(rescueType);
+    setIsDeleteModalOpen(true);
+  };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
-      </div>
-    );
-  }
+  const handleDeleteRescueType = async () => {
+    await deleteRescueTypeMutation.mutateAsync({
+      where: { id: selectedRescueType.id }
+    });
+  };
+
+  // Định nghĩa cấu trúc columns cho TableWrapper
+  const columns = [
+    {
+      header: 'STT',
+      cell: (_: any, index: number) => <div className="text-center font-medium">{index + 1}</div>,
+      className: 'w-20 text-center font-semibold text-gray-700'
+    },
+    {
+      header: 'Tên phương thức cứu hộ',
+      accessorKey: 'name',
+      cell: (item: any) => (
+        <div className="flex items-center">
+          <span className="font-medium">{item.name}</span>
+        </div>
+      ),
+      className: 'font-semibold text-gray-700'
+    },
+    {
+      header: 'Mô tả',
+      accessorKey: 'description',
+      cell: (item: any) => <div className="text-gray-600">{item.description || "Không có mô tả"}</div>,
+      className: 'font-semibold text-gray-700'
+    },
+    {
+      header: 'Đơn vị',
+      accessorKey: 'unit',
+      cell: (item: any) => <div className="text-gray-600">{item.unit || "Không có đơn vị"}</div>,
+      className: 'font-semibold text-gray-700'
+    },
+    {
+      header: 'Thao tác',
+      cell: (item: any) => (
+        <div className="flex justify-center space-x-2">
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-blue-300 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+            onClick={() => handleOpenAddEditModal(item)}
+          >
+            <Edit size={16} className="mr-1" /> Sửa
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
+            onClick={() => handleOpenDeleteModal(item)}
+          >
+            <Trash2 size={16} className="mr-1" /> Xóa
+          </Button>
+        </div>
+      ),
+      className: 'w-40 text-center font-semibold text-gray-700'
+    }
+  ];
+
+  // Định nghĩa EmptyState cho TableWrapper
+  const emptyState = (
+    <TableRow>
+      <TableCell colSpan={4} className="text-center py-8 text-gray-500">
+        <div className="flex flex-col items-center justify-center">
+          <AlertTriangle className="h-8 w-8 text-yellow-500 mb-2" />
+          <p>Không có dữ liệu cấp khẩn cấp</p>
+          <Button
+            variant="outline"
+            className="mt-4 border-blue-300 text-blue-600"
+            onClick={() => handleOpenAddEditModal({ id: '', name: '', description: '', unit: '' })}
+          >
+            <Plus size={16} className="mr-1" /> Thêm phương thức cứu hộ mới
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
 
   if (error) {
     return (
@@ -229,13 +208,13 @@ const RescueResourceTypePage: React.FC = () => {
       </div>
     );
   }
-  
+
   return (
     <div className="w-full mx-auto p-2">
       <Card className="shadow-lg border-t-4 border-blue-200">
         <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 flex flex-row items-center justify-between">
           <CardTitle className="text-xl text-gray-800">
-              Danh sách phương thức cứu hộ
+            Danh sách phương thức cứu hộ
           </CardTitle>
           <div className="flex space-x-4">
             <div className="relative">
@@ -247,9 +226,9 @@ const RescueResourceTypePage: React.FC = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button 
+            <Button
               className="bg-green-500 hover:bg-green-600 text-white"
-              onClick={handleOpenAddModal}
+              onClick={() => handleOpenAddEditModal({ id: '', name: '', description: '', unit: '' })}
             >
               <Plus size={16} className="mr-1" /> Thêm mới
             </Button>
@@ -257,91 +236,33 @@ const RescueResourceTypePage: React.FC = () => {
         </CardHeader>
 
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader className="bg-gray-50">
-                <TableRow>
-                  <TableHead className="w-20 text-center font-semibold text-gray-700">STT</TableHead>
-                  <TableHead className="font-semibold text-gray-700">Tên phương thức cứu hộ</TableHead>
-                  <TableHead className="font-semibold text-gray-700">Mô tả</TableHead>
-                  <TableHead className="font-semibold text-gray-700">Đơn vị</TableHead>
-                  <TableHead className="w-40 text-center font-semibold text-gray-700">Thao tác</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data && data.length > 0 ? (
-                  data.map((item, index) => (
-                    <TableRow key={item.id} className="hover:bg-gray-50 transition-colors">
-                      <TableCell className="text-center font-medium">{index + 1}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center">
-                          <span className="font-medium">{item.name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-gray-600">{item.description || "Không có mô tả"}</TableCell>
-                      <TableCell className="text-gray-600">{item.unit || "Không có đơn vị"}</TableCell>
-                      <TableCell>
-                        <div className="flex justify-center space-x-2">
-                          <Button 
-                            size="sm"
-                            variant="outline"
-                            className="border-blue-300 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
-                            onClick={() => handleEdit(item)}
-                          >
-                            <Edit size={16} className="mr-1" /> Sửa
-                          </Button>
-                          <Button 
-                            size="sm"
-                            variant="outline"
-                            className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
-                            onClick={() => handleOpenDeleteModal(item)}
-                          >
-                            <Trash2 size={16} className="mr-1" /> Xóa
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-gray-500">
-                      <div className="flex flex-col items-center justify-center">
-                        <AlertTriangle className="h-8 w-8 text-yellow-500 mb-2" />
-                        <p>Không có dữ liệu phương thức cứu hộ</p>
-                        <Button 
-                          variant="outline" 
-                          className="mt-4 border-blue-300 text-blue-600"
-                          onClick={handleOpenAddModal}
-                        >
-                          <Plus size={16} className="mr-1" /> Thêm phương thức cứu hộ mới
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
+          <TableWrapper
+            variant="border"
+            columns={columns}
+            data={data || []}
+            isLoading={isLoading}
+            emptyState={emptyState}
+          />
         </CardContent>
-        
+
         {/* Phân trang */}
         <CardFooter className="flex justify-between border-t p-3 bg-gradient-to-r from-blue-50 to-purple-50">
           <div className="text-sm text-blue-700 font-medium">
-              Trang {currentPage + 1} | Tổng số: {data?.length || 0} phương thức cứu hộ
+            Trang {currentPage + 1} | Tổng số: {data?.length || 0} phương thức cứu hộ
           </div>
           <div className="flex space-x-2">
-            <Button 
-              size="sm" 
-              variant="outline" 
+            <Button
+              size="sm"
+              variant="outline"
               onClick={handlePreviousPage}
               disabled={currentPage === 0}
               className="border-blue-300 text-blue-700 hover:bg-blue-100"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button 
-              size="sm" 
-              variant="outline" 
+            <Button
+              size="sm"
+              variant="outline"
               onClick={handleNextPage}
               disabled={!data || data.length < ITEMS_PER_PAGE}
               className="border-blue-300 text-blue-700 hover:bg-blue-100"
@@ -352,196 +273,34 @@ const RescueResourceTypePage: React.FC = () => {
         </CardFooter>
       </Card>
 
-      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle className="text-center text-xl">Thêm phương thức cứu hộ Mới</DialogTitle>
-            <DialogDescription className="text-center">
-              Nhập thông tin chi tiết về phương thức cứu hộ mới
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right font-medium">
-                Tên phương thức cứu hộ <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="name"
-                value={newRescueType.name}
-                onChange={(e) => setNewRescueType({...newRescueType, name: e.target.value})}
-                className="col-span-3"
-                placeholder="Nhập tên phương thức cứu hộ"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right font-medium">
-                Mô tả
-              </Label>
-              <Textarea
-                id="description"
-                value={newRescueType.description}
-                onChange={(e) => setNewRescueType({...newRescueType, description: e.target.value})}
-                className="col-span-3"
-                placeholder="Nhập mô tả chi tiết về độ ưu tiên"
-                rows={4}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="unit" className="text-right font-medium">
-                Đơn vị
-              </Label>
-              <Input
-                id="unit"
-                value={newRescueType.unit}
-                onChange={(e) => setNewRescueType({...newRescueType, unit: e.target.value})}
-                className="col-span-3"
-                placeholder="Nhập đơn vị"
-              />
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
-              Hủy
-            </Button>
-            <Button 
-              onClick={handleCreateRescueType} 
-              className="bg-green-500 hover:bg-green-600 text-white"
-              disabled={createRescueTypeMutation.isPending}
-            >
-              {createRescueTypeMutation.isPending ? (
-                <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Đang xử lý...
-                </div>
-              ) : (
-                <>
-                  <Save size={16} className="mr-1" /> Lưu
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Dialog Thêm mới */}
+      <DialogCreateUpdateRescueResourceType
+        open={isAddModalOpen}
+        setOpen={setIsAddModalOpen}
+        onSuccess={refetch}
+        mode="create"
+      />
 
-      {/* Modal Chỉnh Sửa Loại độ ưu tiên*/}
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle className="text-center text-xl">Chỉnh Sửa độ ưu tiên</DialogTitle>
-            <DialogDescription className="text-center">
-              Cập nhật thông tin chi tiết về độ ưu tiên
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-name" className="text-right font-medium">
-                Tên độ ưu tiên <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="edit-name"
-                value={selectedRescueType.name}
-                onChange={(e) => setSelectedRescueType({...selectedRescueType, name: e.target.value})}
-                className="col-span-3"
-                placeholder="Nhập tên độ ưu tiên"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-description" className="text-right font-medium">
-                Mô tả
-              </Label>
-              <Textarea
-                id="edit-description"
-                value={selectedRescueType.description || ''}
-                onChange={(e) => setSelectedRescueType({...selectedRescueType, description: e.target.value})}
-                className="col-span-3"
-                placeholder="Nhập mô tả chi tiết về phương thức cứu hộ"
-                rows={4}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="unit" className="text-right font-medium">
-                Đơn vị
-              </Label>
-              <Input
-                id="unit"
-                value={selectedRescueType.unit || ''}
-                onChange={(e) => setSelectedRescueType({...selectedRescueType, unit: e.target.value})}
-                className="col-span-3"
-                placeholder="Nhập đơn vị"
-              />
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
-              Hủy
-            </Button>
-            <Button 
-              onClick={handleUpdateRescueType} 
-              className="bg-blue-500 hover:bg-blue-600 text-white"
-              disabled={updateRescueTypeMutation.isPending}
-            >
-              {updateRescueTypeMutation.isPending ? (
-                <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Đang xử lý...
-                </div>
-              ) : (
-                <>
-                  <Save size={16} className="mr-1" /> Cập nhật
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Dialog Chỉnh sửa */}
+      <DialogCreateUpdateRescueResourceType
+        open={isEditModalOpen}
+        setOpen={setIsEditModalOpen}
+        initialData={selectedRescueType}
+        onSuccess={refetch}
+        mode="update"
+      />
 
       {/* Modal Xác Nhận Xóa */}
-      <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-        <DialogContent className="sm:max-w-[450px]">
-          <DialogHeader>
-            <DialogTitle className="text-center text-xl">Xác Nhận Xóa</DialogTitle>
-            <DialogDescription className="text-center">
-              Bạn có chắc chắn muốn xóa phương thức cứu hộ này không?
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="py-4 text-center">
-            <p className="font-medium text-lg text-gray-800">{selectedRescueType.name}</p>
-            <p className="text-gray-600 mt-2">{selectedRescueType.description || "Không có mô tả"}</p>
-            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-700 text-sm">
-              <AlertTriangle className="h-4 w-4 inline-block mr-1" />
-              Hành động này không thể hoàn tác. Tất cả dữ liệu liên quan đến phương thức cứu hộ này sẽ bị xóa.
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
-              Hủy
-            </Button>
-            <Button 
-              variant="destructive"
-              onClick={handleDeleteRescueType}
-              className="bg-red-500 hover:bg-red-600 text-white"
-              disabled={deleteRescueTypeMutation.isPending}
-            >
-              {deleteRescueTypeMutation.isPending ? (
-                <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Đang xử lý...
-                </div>
-              ) : (
-                <>
-                  <Trash2 size={16} className="mr-1 " /> Xóa
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={isDeleteModalOpen}
+        setOpen={setIsDeleteModalOpen}
+        title="Xác nhận xóa"
+        description="Bạn có chắc chắn muốn xóa phương thức cứu hộ này không?"
+        onConfirm={handleDeleteRescueType}
+        isLoading={deleteRescueTypeMutation.isPending}
+        confirmText="Xóa"
+        cancelText="Hủy"
+      />
     </div>
   );
 };

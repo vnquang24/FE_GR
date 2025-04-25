@@ -7,6 +7,7 @@ import {
   TableHead,
   TableRow,
   TableCell,
+  TableWrapper
 } from '@/components/ui/table';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,42 +25,54 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/toast';
+import _ from 'lodash';
+import { z } from 'zod';
+import DialogCreateUpdatePriorityLevel from '@/components/common/dialog-create-update-priority-level';
+import DialogCreateUpdateEmergencyLevel from '@/components/common/dialog-create-update-emergency-level';
+
+// Định nghĩa schema validation sử dụng Zod
+const emergencyLevelFormSchema = z.object({
+  id: z.string(),
+  name: z.string().trim().min(1, { message: "Tên cấp khẩn cấp không được để trống" }),
+  description: z.string().optional(), // Cho phép null hoặc undefined, và là tùy chọn
+});
+
+// Định nghĩa kiểu dữ liệu từ schema Zod
+export type EmergencyLevelFormData = z.infer<typeof emergencyLevelFormSchema>;
+export { emergencyLevelFormSchema };
 
 const EmergencyLevelPage: React.FC = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [searchText, setSearchText] = useState<string>('')
+  const debouncedSearchText = _.debounce(setSearchText, 500)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [selectedEmergencyLevel, setSelectedEmergencyLevel] = useState<{id: string, name: string, description: string | null}>({
+  const [selectedEmergencyLevel, setSelectedEmergencyLevel] = useState<EmergencyLevelFormData>({
     id: '',
     name: '',
     description: ''
   });
-  const [newEmergencyLevel, setNewEmergencyLevel] = useState({
-    name: '',
-    description: ''
-  });
-  
+
   // State cho phân trang
   const [currentPage, setCurrentPage] = useState(0);
   const ITEMS_PER_PAGE = 10;
 
-  // Thêm lại logic Debounce
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
-
-  const { data, error, isLoading, refetch } = useFindManyEmergencyLevel({
+  const { data, error} = useFindManyEmergencyLevel({
     where: {
-      name: {
-        contains: debouncedSearchTerm,
-        mode: 'insensitive'
-      }
+      OR: [
+        {
+          name: {
+            contains: searchText,
+            mode: 'insensitive'
+          }
+        },
+        {
+          description: {
+            contains: searchText,
+            mode: 'insensitive'
+          }
+        }
+      ]
     },
     select: {
       id: true,
@@ -72,11 +85,6 @@ const EmergencyLevelPage: React.FC = () => {
     skip: currentPage * ITEMS_PER_PAGE,
     take: ITEMS_PER_PAGE
   });
-
-  // Bỏ comment useEffect này để reset trang khi tìm kiếm
-  useEffect(() => {
-    setCurrentPage(0);
-  }, [debouncedSearchTerm]);
 
   // Xử lý chuyển trang
   const handlePreviousPage = () => {
@@ -91,98 +99,19 @@ const EmergencyLevelPage: React.FC = () => {
     }
   };
 
-  const createEmergencyLevelMutation = useCreateEmergencyLevel({
-    onSuccess: () => {
-      refetch();
-    }
-  });
-  const updateEmergencyLevelMutation = useUpdateEmergencyLevel({
-    onSuccess: () => {
-      refetch();
-    }
-  });
-  const deleteEmergencyLevelMutation = useDeleteEmergencyLevel({
-    onSuccess: () => {
-      refetch();
-    }
-  });
+  const deleteEmergencyLevelMutation = useDeleteEmergencyLevel({});
 
-  const handleOpenAddModal = () => {
-    setNewEmergencyLevel({ name: '', description: '' });
-    setIsAddModalOpen(true);
-  };
-
-  const handleCreateEmergencyLevel = async () => {
-    if (!newEmergencyLevel.name.trim()) {
-      toast.error({
-        title: "Lỗi",
-        description: "Tên cấp khẩn cấp không được để trống"
-      });
-      return;
-    }
-
-    try {
-      await createEmergencyLevelMutation.mutateAsync({
-        data: {
-          name: newEmergencyLevel.name,
-          description: newEmergencyLevel.description || undefined
-        }
-      });
-      
-      toast.success({
-        title: "Thành công",
-        description: "Đã thêm cấp khẩn cấp mới"
-      });
-      
-      setIsAddModalOpen(false);
-    } catch (error) {
-      toast.error({
-        title: "Lỗi",
-        description: "Không thể thêm cấp khẩn cấp. Vui lòng thử lại sau."
-      });
-      console.error("Lỗi khi thêm cấp khẩn cấp:", error);
+  const handleOpenAddEditModal = (emergencyLevel: EmergencyLevelFormData) => {
+    if (emergencyLevel.id === '') {
+      setIsAddModalOpen(true);
+    } else {
+      setSelectedEmergencyLevel(emergencyLevel);
+      setIsEditModalOpen(true);
     }
   };
 
-  const handleEdit = (emergencyLevel: {id: string, name: string, description: string | null}) => {
-    setSelectedEmergencyLevel(emergencyLevel);
-    setIsEditModalOpen(true);
-  };
-
-  const handleUpdateEmergencyLevel = async () => {
-    if (!selectedEmergencyLevel.name.trim()) {
-      toast.error({
-        title: "Lỗi",
-        description: "Tên cấp khẩn cấp không được để trống"
-      });
-      return;
-    }
-
-    try {
-      await updateEmergencyLevelMutation.mutateAsync({
-        where: { id: selectedEmergencyLevel.id },
-        data: {
-          name: selectedEmergencyLevel.name,
-          description: selectedEmergencyLevel.description || undefined
-        }
-      });
-      
-      toast.success({
-        title: "Thành công",
-        description: "Đã cập nhật cấp khẩn cấp"
-      });
-      
-      setIsEditModalOpen(false);
-    } catch (error) {
-      toast.error({
-        title: "Lỗi",
-        description: "Không thể cập nhật cấp khẩn cấp. Vui lòng thử lại sau."
-      });
-      console.error("Lỗi khi cập nhật cấp khẩn cấp:", error);
-    }
-  };
-
-  const handleOpenDeleteModal = (emergencyLevel: {id: string, name: string, description: string | null}) => {
+  // Xóa cấp khẩn cấp
+  const handleOpenDeleteModal = (emergencyLevel: EmergencyLevelFormData) => {
     setSelectedEmergencyLevel(emergencyLevel);
     setIsDeleteModalOpen(true);
   };
@@ -192,12 +121,12 @@ const EmergencyLevelPage: React.FC = () => {
       await deleteEmergencyLevelMutation.mutateAsync({
         where: { id: selectedEmergencyLevel.id }
       });
-      
+
       toast.success({
         title: "Thành công",
         description: "Đã xóa cấp khẩn cấp"
       });
-      
+
       setIsDeleteModalOpen(false);
     } catch (error) {
       toast.error({
@@ -207,14 +136,6 @@ const EmergencyLevelPage: React.FC = () => {
       console.error("Lỗi khi xóa cấp khẩn cấp:", error);
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
-      </div>
-    );
-  }
 
   if (error) {
     return (
@@ -231,111 +152,116 @@ const EmergencyLevelPage: React.FC = () => {
       <Card className="shadow-lg border-t-4 border-blue-200">
         <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 flex flex-row items-center justify-between">
           <CardTitle className="text-xl text-gray-800">
-            Danh sách Cấp Khẩn Cấp
+            Danh sách cấp khẩn cấp
           </CardTitle>
           <div className="flex space-x-4">
             <div className="relative">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Tìm kiếm cấp khẩn cấp..."
-                className="pl-8 w-64 border-blue-200 focus:border-blue-400"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Tìm kiếm theo tên hoặc mô tả..."
+                className="pl-8 w-64 border-blue-200"
+                onChange={(e) => {
+                  debouncedSearchText(e.target.value);
+                  setSearchText(e.target.value);
+                }}
               />
             </div>
             <Button 
               className="bg-green-500 hover:bg-green-600 text-white"
-              onClick={handleOpenAddModal}
+              onClick={() => handleOpenAddEditModal({id: '', name: searchText, description: ''})}
             >
               <Plus size={16} className="mr-1" /> Thêm mới
             </Button>
           </div>
         </CardHeader>
-
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <Table>
-              <TableHeader className="bg-gray-50">
+            <TableWrapper
+              data={data}
+              columns={[
+                {
+                  header: 'STT',
+                  cell: (_, index) => index + 1,
+                  className: 'w-20 text-center font-medium'
+                },
+                {
+                  header: 'Tên cấp khẩn cấp',
+                  accessorKey: 'name',
+                  cell: (item) => (
+                    <div className="flex items-center">
+                      <span className="font-medium">{item.name}</span>
+                    </div>
+                  )
+                },
+                {
+                  header: 'Mô tả',
+                  accessorKey: 'description',
+                  cell: (item) => item.description || "Không có mô tả",
+                  className: 'text-gray-600'
+                },
+                {
+                  header: 'Thao tác',
+                  cell: (item) => (
+                    <div className="flex justify-center space-x-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-blue-300 text-blue-600 hover:bg-blue-50"
+                        onClick={() => handleOpenAddEditModal(item)}
+                      >
+                        <Edit size={16} className="mr-1" /> Sửa
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-red-300 text-red-600 hover:bg-red-50"
+                        onClick={() => handleOpenDeleteModal(item)}
+                      >
+                        <Trash2 size={16} className="mr-1" /> Xóa
+                      </Button>
+                    </div>
+                  ),
+                  className: 'w-40 text-center'
+                }
+              ]}
+              emptyState={
                 <TableRow>
-                  <TableHead className="w-20 text-center font-semibold text-gray-700">STT</TableHead>
-                  <TableHead className="font-semibold text-gray-700">Tên cấp khẩn cấp</TableHead>
-                  <TableHead className="font-semibold text-gray-700">Mô tả</TableHead>
-                  <TableHead className="w-40 text-center font-semibold text-gray-700">Thao tác</TableHead>
+                  <TableCell colSpan={4} className="text-center py-8 text-gray-500">
+                    <div className="flex flex-col items-center justify-center">
+                      <AlertTriangle className="h-8 w-8 text-yellow-500 mb-2" />
+                      <p>Không có dữ liệu cấp khẩn cấp</p>
+                      <Button
+                        variant="outline"
+                        className="mt-4 border-blue-300 text-blue-600"
+                        onClick={() => handleOpenAddEditModal({id: '', name: searchText, description: ''})}
+                      >
+                        <Plus size={16} className="mr-1" /> Thêm cấp khẩn cấp mới
+                      </Button>
+                    </div>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data && data.length > 0 ? (
-                  data.map((item, index) => (
-                    <TableRow key={item.id} className="hover:bg-gray-50 transition-colors">
-                      <TableCell className="text-center font-medium">{index + 1}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center">
-                          <span className="font-medium">{item.name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-gray-600">{item.description || "Không có mô tả"}</TableCell>
-                      <TableCell>
-                        <div className="flex justify-center space-x-2">
-                          <Button 
-                            size="sm"
-                            variant="outline"
-                            className="border-blue-300 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
-                            onClick={() => handleEdit(item)}
-                          >
-                            <Edit size={16} className="mr-1" /> Sửa
-                          </Button>
-                          <Button 
-                            size="sm"
-                            variant="outline"
-                            className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
-                            onClick={() => handleOpenDeleteModal(item)}
-                          >
-                            <Trash2 size={16} className="mr-1" /> Xóa
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center py-8 text-gray-500">
-                      <div className="flex flex-col items-center justify-center">
-                        <AlertTriangle className="h-8 w-8 text-yellow-500 mb-2" />
-                        <p>Không có dữ liệu cấp khẩn cấp</p>
-                        <Button 
-                          variant="outline" 
-                          className="mt-4 border-blue-300 text-blue-600"
-                          onClick={handleOpenAddModal}
-                        >
-                          <Plus size={16} className="mr-1" /> Thêm cấp khẩn cấp mới
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+              }
+            />
           </div>
         </CardContent>
-        
         {/* Phân trang */}
         <CardFooter className="flex justify-between border-t p-3 bg-gradient-to-r from-blue-50 to-purple-50">
           <div className="text-sm text-blue-700 font-medium">
-              Trang {currentPage + 1} | Tổng số: {data?.length || 0} cấp khẩn cấp
+            Trang {currentPage + 1} | Tổng số: {data?.length || 0} cấp khẩn cấp
           </div>
           <div className="flex space-x-2">
-            <Button 
-              size="sm" 
-              variant="outline" 
+            <Button
+              size="sm"
+              variant="outline"
               onClick={handlePreviousPage}
               disabled={currentPage === 0}
               className="border-blue-300 text-blue-700 hover:bg-blue-100"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button 
-              size="sm" 
-              variant="outline" 
+            <Button
+              size="sm"
+              variant="outline"
               onClick={handleNextPage}
               disabled={!data || data.length < ITEMS_PER_PAGE}
               className="border-blue-300 text-blue-700 hover:bg-blue-100"
@@ -346,146 +272,37 @@ const EmergencyLevelPage: React.FC = () => {
         </CardFooter>
       </Card>
 
-      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle className="text-center text-xl">Thêm Cấp Khẩn Cấp Mới</DialogTitle>
-            <DialogDescription className="text-center">
-              Nhập thông tin chi tiết về cấp khẩn cấp mới
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right font-medium">
-                Tên cấp khẩn cấp <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="name"
-                value={newEmergencyLevel.name}
-                onChange={(e) => setNewEmergencyLevel({...newEmergencyLevel, name: e.target.value})}
-                className="col-span-3"
-                placeholder="Nhập tên cấp khẩn cấp"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right font-medium">
-                Mô tả
-              </Label>
-              <Textarea
-                id="description"
-                value={newEmergencyLevel.description}
-                onChange={(e) => setNewEmergencyLevel({...newEmergencyLevel, description: e.target.value})}
-                className="col-span-3"
-                placeholder="Nhập mô tả chi tiết về cấp khẩn cấp"
-                rows={4}
-              />
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
-              Hủy
-            </Button>
-            <Button 
-              onClick={handleCreateEmergencyLevel} 
-              className="bg-green-500 hover:bg-green-600 text-white"
-              disabled={createEmergencyLevelMutation.isPending}
-            >
-              {createEmergencyLevelMutation.isPending ? (
-                <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Đang xử lý...
-                </div>
-              ) : (
-                <>
-                  <Save size={16} className="mr-1" /> Lưu
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DialogCreateUpdateEmergencyLevel
+        open={isAddModalOpen}
+        setOpen={setIsAddModalOpen}
+        mode="create"
+      >
+      </DialogCreateUpdateEmergencyLevel>
 
-      {/* Modal Chỉnh Sửa Loại Cấp khẩn cấp*/}
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle className="text-center text-xl">Chỉnh Sửa Cấp Khẩn Cấp</DialogTitle>
-            <DialogDescription className="text-center">
-              Cập nhật thông tin chi tiết về cấp khẩn cấp
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-name" className="text-right font-medium">
-                Tên cấp khẩn cấp <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="edit-name"
-                value={selectedEmergencyLevel.name}
-                onChange={(e) => setSelectedEmergencyLevel({...selectedEmergencyLevel, name: e.target.value})}
-                className="col-span-3"
-                placeholder="Nhập tên cấp khẩn cấp"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-description" className="text-right font-medium">
-                Mô tả
-              </Label>
-              <Textarea
-                id="edit-description"
-                value={selectedEmergencyLevel.description || ''}
-                onChange={(e) => setSelectedEmergencyLevel({...selectedEmergencyLevel, description: e.target.value})}
-                className="col-span-3"
-                placeholder="Nhập mô tả chi tiết về cấp khẩn cấp"
-                rows={4}
-              />
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
-              Hủy
-            </Button>
-            <Button 
-              onClick={handleUpdateEmergencyLevel} 
-              className="bg-blue-500 hover:bg-blue-600 text-white"
-              disabled={updateEmergencyLevelMutation.isPending}
-            >
-              {updateEmergencyLevelMutation.isPending ? (
-                <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Đang xử lý...
-                </div>
-              ) : (
-                <>
-                  <Save size={16} className="mr-1" /> Cập nhật
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DialogCreateUpdateEmergencyLevel
+        open={isEditModalOpen}
+        setOpen={setIsEditModalOpen}
+        mode="update"
+        initialData={selectedEmergencyLevel}
+      >
+      </DialogCreateUpdateEmergencyLevel>
 
-      {/* Modal Xác Nhận Xóa */}
+      
+      {/* Dialog xác nhận xóa */}
       <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-        <DialogContent className="sm:max-w-[450px]">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle className="text-center text-xl">Xác Nhận Xóa</DialogTitle>
+            <DialogTitle className="text-center text-xl">Xác nhận xóa</DialogTitle>
             <DialogDescription className="text-center">
-              Bạn có chắc chắn muốn xóa cấp khẩn cấp này không?
+              Bạn có chắc chắn muốn xóa cấp khẩn cấp "{selectedEmergencyLevel?.name}"?
             </DialogDescription>
           </DialogHeader>
           
-          <div className="py-4 text-center">
-            <p className="font-medium text-lg text-gray-800">{selectedEmergencyLevel.name}</p>
-            <p className="text-gray-600 mt-2">{selectedEmergencyLevel.description || "Không có mô tả"}</p>
-            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-700 text-sm">
-              <AlertTriangle className="h-4 w-4 inline-block mr-1" />
-              Hành động này không thể hoàn tác. Tất cả dữ liệu liên quan đến cấp khẩn cấp này sẽ bị xóa.
-            </div>
+          <div className="text-center py-4">
+            <AlertTriangle className="h-12 w-12 mx-auto text-yellow-500 mb-3" />
+            <p className="text-sm text-gray-500">
+              Hành động này không thể hoàn tác.
+            </p>
           </div>
           
           <DialogFooter>
@@ -493,8 +310,7 @@ const EmergencyLevelPage: React.FC = () => {
               Hủy
             </Button>
             <Button 
-              variant="destructive"
-              onClick={handleDeleteEmergencyLevel}
+              onClick={handleDeleteEmergencyLevel} 
               className="bg-red-500 hover:bg-red-600 text-white"
               disabled={deleteEmergencyLevelMutation.isPending}
             >
@@ -505,7 +321,7 @@ const EmergencyLevelPage: React.FC = () => {
                 </div>
               ) : (
                 <>
-                  <Trash2 size={16} className="mr-1 " /> Xóa
+                  <Trash2 size={16} className="mr-1" /> Xóa
                 </>
               )}
             </Button>

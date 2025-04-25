@@ -107,6 +107,135 @@ const TableCaption = React.forwardRef<
 ))
 TableCaption.displayName = 'TableCaption'
 
+interface TableWrapperProps extends React.HTMLAttributes<HTMLDivElement> {
+    children?: React.ReactNode
+    headings?: string[]
+    variant?: 'default' | 'striped' | 'border'
+    noHeader?: boolean
+    data?: Array<Record<string, any>>
+    columns?: Array<{
+        header: string
+        accessorKey?: string
+        cell?: (item: any, index: number) => React.ReactNode
+        className?: string
+    }>
+    emptyState?: React.ReactNode
+    isLoading?: boolean
+    loadingComponent?: React.ReactNode
+}
+
+const TableWrapper = ({
+    children,
+    headings = [],
+    className,
+    variant = 'default',
+    noHeader = false,
+    data = [],
+    columns = [],
+    emptyState,
+    isLoading = false,
+    loadingComponent,
+    ...props
+}: TableWrapperProps) => {
+    const variantStyles = {
+        default: '',
+        striped: '[&_tbody_tr:nth-child(odd)]:bg-muted/50',
+        border: 'border border-border rounded-md'
+    }
+
+    const tableHeadings = columns.length > 0 
+        ? columns.map(col => col.header)
+        : headings;
+
+    const renderEmptyState = () => {
+        if (emptyState) return emptyState;
+        
+        return (
+            <TableRow>
+                <TableCell 
+                    colSpan={tableHeadings.length || 1} 
+                    className="text-center py-10 text-gray-500"
+                >
+                    Không có dữ liệu
+                </TableCell>
+            </TableRow>
+        );
+    };
+
+    const renderLoadingState = () => {
+        if (loadingComponent) return loadingComponent;
+        
+        return (
+            <TableRow>
+                <TableCell 
+                    colSpan={tableHeadings.length || 1} 
+                    className="text-center py-10"
+                >
+                    <div className="flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                        <span className="ml-2 text-gray-600">Đang tải dữ liệu...</span>
+                    </div>
+                </TableCell>
+            </TableRow>
+        );
+    };
+
+    return (
+        <div className={cn('w-full', className)} {...props}>
+            <Table className={cn('w-full', variantStyles[variant])}>
+                {!noHeader && tableHeadings.length > 0 && (
+                    <TableHeader className="bg-gray-50">
+                        <TableRow>
+                            {tableHeadings.map((heading, index) => (
+                                <TableHead 
+                                    key={`heading-${index}`}
+                                    className={cn('font-semibold text-gray-700', 
+                                        columns[index]?.className)}
+                                >
+                                    {heading}
+                                </TableHead>
+                            ))}
+                        </TableRow>
+                    </TableHeader>
+                )}
+                
+                {children ? (
+                    children
+                ) : (
+                    <TableBody>
+                        {isLoading ? (
+                            renderLoadingState()
+                        ) : data.length > 0 ? (
+                            data.map((item, rowIndex) => (
+                                <TableRow 
+                                    key={`row-${rowIndex}`}
+                                    className="hover:bg-gray-50 transition-colors"
+                                >
+                                    {columns.map((column, colIndex) => (
+                                        <TableCell 
+                                            key={`cell-${rowIndex}-${colIndex}`}
+                                            className={column.className}
+                                        >
+                                            {column.cell 
+                                                ? column.cell(item, rowIndex)
+                                                : column.accessorKey 
+                                                    ? item[column.accessorKey] 
+                                                    : null}
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            ))
+                        ) : (
+                            renderEmptyState()
+                        )}
+                    </TableBody>
+                )}
+            </Table>
+        </div>
+    )
+}
+TableWrapper.displayName = 'TableWrapper'
+
 export {
     Table,
     TableHeader,
@@ -116,4 +245,5 @@ export {
     TableRow,
     TableCell,
     TableCaption,
+    TableWrapper,
 }
