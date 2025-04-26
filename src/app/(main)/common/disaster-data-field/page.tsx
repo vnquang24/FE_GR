@@ -22,8 +22,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableWrapper
 } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription, DialogWrapper, DialogClose } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/toast";
 import _ from 'lodash';
 
@@ -112,16 +113,10 @@ const NestedTable: React.FC<{
   const indentPadding = `${indent * 2}rem`;
 
   return (
-    <Table>
-      <TableHeader className="bg-gray-50 border-b">
-        <TableRow>
-          <TableCell className="w-12 text-center">SL</TableCell>
-          <TableCell>Tên</TableCell>
-          <TableCell>Mã</TableCell>
-          <TableCell>Đơn vị</TableCell>
-          <TableCell className="w-28 text-center">Thao tác</TableCell>
-        </TableRow>
-      </TableHeader>
+    <TableWrapper
+      headings={["SL", "Tên", "Mã", "Đơn vị", "Thao tác"]}
+      variant="striped"
+    >
       <TableBody>
         {nodes.map((nodeId, index) => {
           const node = getNodeById(nodeId);
@@ -132,8 +127,8 @@ const NestedTable: React.FC<{
           return (
             <React.Fragment key={node.id}>
               <TableRow className="hover:bg-gray-50">
-                <TableCell className="text-center">
-                  <div className="flex items-center justify-center">
+                <TableCell className="text-center w-10">
+                  <div className="flex items-center text-center justify-center">
                     {hasChildren && (
                       <Button
                         variant="ghost"
@@ -155,12 +150,12 @@ const NestedTable: React.FC<{
                     )}
                   </div>
                 </TableCell>
-                <TableCell className="font-medium">
-                  <div style={{ paddingLeft: indentPadding }}>{node.name}</div>
+                <TableCell className="font-medium whitespace-normal break-words w-2/5">
+                  <div style={{ paddingLeft: indentPadding }} className="text-gray-600 whitespace-normal break-words max-w-xl">{node.name}</div>
                 </TableCell>
-                <TableCell className="text-gray-600">{node.code}</TableCell>
-                <TableCell className="text-gray-600">{node.unit}</TableCell>
-                <TableCell className="text-center">
+                <TableCell className="text-gray-600 whitespace-normal break-words w-1/4 max-w-xs">{node.code}</TableCell>
+                <TableCell className="text-gray-600 whitespace-normal break-words w-20 max-w-xs">{node.unit}</TableCell>
+                <TableCell className="text-center w-32">
                   <div className="flex justify-center space-x-2">
                     <Button
                       size="sm"
@@ -223,7 +218,7 @@ const NestedTable: React.FC<{
           </TableRow>
         )}
       </TableBody>
-    </Table>
+    </TableWrapper>
   );
 };
 
@@ -395,33 +390,26 @@ const DisasterDataFieldPage: React.FC = () => {
         />
       )}
 
-      {/* Modal Xác Nhận Xóa */}
-      <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-        <DialogContent className="sm:max-w-[450px]">
-          <DialogHeader>
-            <DialogTitle className="text-center text-xl">Xác Nhận Xóa</DialogTitle>
-            <DialogDescription className="text-center">
-              Bạn có chắc chắn muốn xóa trường dữ liệu thảm họa này không?
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="py-4 text-center">
-            <p className="font-medium text-lg text-gray-800">{selectedNode?.name}</p>
-            <p className="text-gray-600 mt-2">{selectedNode?.description || "Không có mô tả"}</p>
-            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-700 text-sm">
-              <AlertTriangle className="h-4 w-4 inline-block mr-1" />
-              Hành động này không thể hoàn tác. Tất cả dữ liệu liên quan sẽ bị xóa.
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
-              Hủy
-            </Button>
-            <Button
-              variant="destructive"
+      {/* Modal Xác Nhận Xóa - Sử dụng DialogWrapper */}
+      <DialogWrapper
+        open={isDeleteModalOpen}
+        setOpen={setIsDeleteModalOpen}
+        title="Xác Nhận Xóa"
+        description="Bạn có chắc chắn muốn xóa trường dữ liệu thảm họa này không?"
+        className="sm:max-w-[500px]"
+        footer={
+          <div className="flex justify-end gap-2 w-full">
+            <DialogClose asChild>
+              <button
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Hủy
+              </button>
+            </DialogClose>
+            <button
               onClick={handleConfirmDelete}
-              className="bg-red-500 hover:bg-red-600 text-white"
+              className="inline-flex justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
               disabled={deleteDataFieldMutation.isPending}
             >
               {deleteDataFieldMutation.isPending ? (
@@ -434,10 +422,25 @@ const DisasterDataFieldPage: React.FC = () => {
                   <Trash2 size={16} className="mr-1" /> Xóa
                 </>
               )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </button>
+          </div>
+        }
+      >
+        <div className="text-center max-w-[440px] overflow-y-auto px-2">
+          <div className="bg-white p-4 rounded-md">
+            <h3 className="font-medium text-lg text-gray-800 whitespace-normal break-words max-w-full">
+              {selectedNode?.name}
+            </h3>
+            <div className="text-gray-600 mt-2 whitespace-pre-wrap break-words max-w-full">
+              {selectedNode?.description || "Không có mô tả"}
+            </div>
+          </div>
+          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-700 text-sm">
+            <AlertTriangle className="h-4 w-4 inline-block mr-1" />
+            Hành động này không thể hoàn tác. Tất cả dữ liệu liên quan sẽ bị xóa.
+          </div>
+        </div>
+      </DialogWrapper>
     </div>
   );
 };

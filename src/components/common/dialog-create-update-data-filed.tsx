@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FormDialog, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { FormDialog, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, ConfirmDialog } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -461,51 +461,18 @@ const DialogCreateUpdateDataField: React.FC<DialogCreateUpdateDataFieldProps> = 
         </Form>
       </FormDialog>
 
-      {/* Dialog xác nhận */}
-      <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
-        <DialogContent className="bg-white">
-          <DialogHeader>
-            <DialogTitle>Xác nhận</DialogTitle>
-            <DialogDescription>
-              {mode === 'create' 
-                ? 'Bạn có chắc chắn muốn thêm trường dữ liệu mới không?' 
-                : 'Bạn có chắc chắn muốn cập nhật trường dữ liệu không?'}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="text-center">
-            <div className="mt-2">
-              <p className="text-sm text-gray-500">
-                Hành động này không thể hoàn tác.
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsConfirmOpen(false)}
-            >
-              Hủy
-            </Button>
-            <Button
-              onClick={handleConfirm}
-              className={mode === 'create' ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <div className="flex items-center">
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Đang xử lý...
-                </div>
-              ) : (
-                <>
-                  <Save className="w-4 h-4 mr-2" />
-                  {mode === 'create' ? 'Thêm mới' : 'Cập nhật'}
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Thay thế Dialog xác nhận bằng ConfirmDialog */}
+      <ConfirmDialog
+        open={isConfirmOpen}
+        setOpen={setIsConfirmOpen}
+        title="Xác nhận"
+        description={mode === 'create' 
+          ? 'Bạn có chắc chắn muốn thêm trường dữ liệu mới không?' 
+          : 'Bạn có chắc chắn muốn cập nhật trường dữ liệu không?'}
+        onConfirm={handleConfirm}
+        confirmText={mode === 'create' ? 'Thêm mới' : 'Cập nhật'}
+        isLoading={isLoading}
+      />
     </>
   );
 };

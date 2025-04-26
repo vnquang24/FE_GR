@@ -184,7 +184,7 @@ const TableWrapper = ({
         <div className={cn('w-full', className)} {...props}>
             <Table className={cn('w-full', variantStyles[variant])}>
                 {!noHeader && tableHeadings.length > 0 && (
-                    <TableHeader className="bg-gray-50">
+                    <TableHeader className="bg-blue-300">
                         <TableRow>
                             {tableHeadings.map((heading, index) => (
                                 <TableHead 
