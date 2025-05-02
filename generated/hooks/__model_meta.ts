@@ -313,6 +313,14 @@ const metadata = {
                     isDataModel: true,
                     isArray: true,
                     backLink: 'disaster',
+                }, startDateTime: {
+                    name: "startDateTime",
+                    type: "DateTime",
+                    isOptional: true,
+                }, endDateTime: {
+                    name: "endDateTime",
+                    type: "DateTime",
+                    isOptional: true,
                 },
             }
             , uniqueConstraints: {
@@ -461,15 +469,16 @@ const metadata = {
                     name: "endDate",
                     type: "DateTime",
                     isOptional: true,
+                }, source: {
+                    name: "source",
+                    type: "String",
+                    isOptional: true,
                 },
             }
             , uniqueConstraints: {
                 id: {
                     name: "id",
                     fields: ["id"]
-                }, disasterId_rescueTypeId: {
-                    name: "disasterId_rescueTypeId",
-                    fields: ["disasterId", "rescueTypeId"]
                 },
             }
             ,
@@ -778,9 +787,6 @@ const metadata = {
                     isOptional: true,
                 }, name: {
                     name: "name",
-                    type: "String",
-                }, unit: {
-                    name: "unit",
                     type: "String",
                 }, disaster: {
                     name: "disaster",

@@ -122,6 +122,7 @@ interface TableWrapperProps extends React.HTMLAttributes<HTMLDivElement> {
     emptyState?: React.ReactNode
     isLoading?: boolean
     loadingComponent?: React.ReactNode
+    spacing?: 'none' | 'sm' | 'md' | 'lg'
 }
 
 const TableWrapper = ({
@@ -135,12 +136,20 @@ const TableWrapper = ({
     emptyState,
     isLoading = false,
     loadingComponent,
+    spacing = 'md',
     ...props
 }: TableWrapperProps) => {
     const variantStyles = {
         default: '',
         striped: '[&_tbody_tr:nth-child(odd)]:bg-muted/50',
         border: 'border border-border rounded-md'
+    }
+    
+    const spacingStyles = {
+        none: '',
+        sm: 'pt-2',
+        md: 'pt-4',
+        lg: 'pt-6'
     }
 
     const tableHeadings = columns.length > 0 
@@ -181,7 +190,7 @@ const TableWrapper = ({
     };
 
     return (
-        <div className={cn('w-full', className)} {...props}>
+        <div className={cn('w-full', spacingStyles[spacing], className)} {...props}>
             <Table className={cn('w-full', variantStyles[variant])}>
                 {!noHeader && tableHeadings.length > 0 && (
                     <TableHeader className="bg-blue-300">

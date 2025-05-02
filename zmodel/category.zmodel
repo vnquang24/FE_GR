@@ -37,6 +37,6 @@ model DataField extends Category {
 model RescueType extends Category {
     name String
     //size Float
-    unit String 
+    // unit String 
     disaster RescueTypeOnDisaster[]
 }

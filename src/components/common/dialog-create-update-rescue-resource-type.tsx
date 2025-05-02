@@ -22,7 +22,7 @@ interface DialogCreateUpdateRescueResourceTypeProps {
 const DialogCreateUpdateRescueResourceType: React.FC<DialogCreateUpdateRescueResourceTypeProps> = ({
     open,
     setOpen,
-    initialData = { id: '', name: '', description: '', unit: '' },
+    initialData = { id: '', name: '', description: '' },
     onSuccess,
     mode
 }) => {
@@ -35,7 +35,6 @@ const DialogCreateUpdateRescueResourceType: React.FC<DialogCreateUpdateRescueRes
             id: '',
             name: '',
             description: '',
-            unit: ''
         },
     });
     
@@ -49,14 +48,12 @@ const DialogCreateUpdateRescueResourceType: React.FC<DialogCreateUpdateRescueRes
                     id: initialData.id || '',
                     name: initialData.name || '',
                     description: initialData.description || '',
-                    unit: initialData.unit || ''
                 });
             } else if (mode === 'create') {
                 reset({
                     id: '',
                     name: '',
                     description: '',
-                    unit: ''
                 });
             }
         }
@@ -79,7 +76,6 @@ const DialogCreateUpdateRescueResourceType: React.FC<DialogCreateUpdateRescueRes
                     data: {
                         name: formData.name,
                         description: formData.description || undefined,
-                        unit: formData.unit || ''
                     }
                 });
                 
@@ -93,7 +89,6 @@ const DialogCreateUpdateRescueResourceType: React.FC<DialogCreateUpdateRescueRes
                     data: {
                         name: formData.name,
                         description: formData.description || undefined,
-                        unit: formData.unit || ''
                     }
                 });
                 
@@ -111,7 +106,7 @@ const DialogCreateUpdateRescueResourceType: React.FC<DialogCreateUpdateRescueRes
             setOpen(false);
             
             if (mode === 'create') {
-                reset({ id: '', name: '', description: '', unit: '' });
+                reset({ id: '', name: '', description: '' });
             }
         } catch (error) {
             toast.error({
@@ -182,18 +177,6 @@ const DialogCreateUpdateRescueResourceType: React.FC<DialogCreateUpdateRescueRes
                                 </div>
                             </div>
                             
-                            <div className="grid grid-cols-4 items-start gap-4">
-                                <Label htmlFor="unit" className="text-right font-medium pt-2">
-                                    Đơn vị
-                                </Label>
-                                <div className="col-span-3 space-y-1">
-                                    <Input
-                                        id="unit"
-                                        {...register('unit')}
-                                        placeholder="Nhập đơn vị"
-                                    />
-                                </div>
-                            </div>
                         </div>
                     </form>
                 </Form>

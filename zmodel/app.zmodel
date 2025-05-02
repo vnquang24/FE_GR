@@ -23,7 +23,10 @@ model Disaster extends Base {
     coordinateId     String
     dataFields       DataFieldOnDisaster[]
     rescueTypes      RescueTypeOnDisaster[]
-
+    startDateTime    DateTime?
+    endDateTime      DateTime?
+    
+    @@allow('read', auth().group?[permission?[name == Disaster && permissionType == READ && !disabled]])
     @@allow('create', auth().group?[permission?[name == Disaster && permissionType == CREATE && !disabled]])
     @@allow('update', auth().group?[permission?[(name == Disaster && permissionType == UPDATE) || (name == Disaster && permissionType == DELETE) && !disabled]])
     @@allow('delete', auth().group?[permission?[name == Disaster && permissionType == DELETE && !disabled]])
@@ -49,7 +52,7 @@ model RescueTypeOnDisaster extends SensitiveBase {
     unitId       String
     startDate    DateTime?
     endDate      DateTime?
-    @@unique([disasterId, rescueTypeId])
+    source       String?
     @@allow('create', auth().group?[permission?[name == RescueTypeOnDisaster && permissionType == CREATE && !disabled]])
     @@allow('read', auth().group?[permission?[name == RescueTypeOnDisaster && permissionType == READ && !disabled]])
     @@allow('update', auth().group?[permission?[name == RescueTypeOnDisaster && permissionType == UPDATE && !disabled]])

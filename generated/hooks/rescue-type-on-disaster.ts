@@ -328,7 +328,7 @@ export function useSuspenseCountRescueTypeOnDisaster<TArgs extends Prisma.Rescue
     return useSuspenseModelQuery<TQueryFnData, TData, TError>('RescueTypeOnDisaster', `${endpoint}/rescueTypeOnDisaster/count`, args, options, fetch);
 }
 
-export function useCheckRescueTypeOnDisaster<TError = DefaultError>(args: { operation: PolicyCrudKind; where?: { id?: string; description?: string; disasterId?: string; rescueTypeId?: string; unitId?: string }; }, options?: (Omit<UseQueryOptions<boolean, TError, boolean>, 'queryKey'> & ExtraQueryOptions)) {
+export function useCheckRescueTypeOnDisaster<TError = DefaultError>(args: { operation: PolicyCrudKind; where?: { id?: string; description?: string; disasterId?: string; rescueTypeId?: string; unitId?: string; source?: string }; }, options?: (Omit<UseQueryOptions<boolean, TError, boolean>, 'queryKey'> & ExtraQueryOptions)) {
     const { endpoint, fetch } = getHooksContext();
     return useModelQuery<boolean, boolean, TError>('RescueTypeOnDisaster', `${endpoint}/rescueTypeOnDisaster/check`, args, options, fetch);
 }

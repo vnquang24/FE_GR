@@ -100,6 +100,8 @@ model Disaster {
   coordinateId     String
   dataFields       DataFieldOnDisaster[]
   rescueTypes      RescueTypeOnDisaster[]
+  startDateTime    DateTime?
+  endDateTime      DateTime?
 }
 
 model DataFieldOnDisaster {
@@ -132,8 +134,7 @@ model RescueTypeOnDisaster {
   unitId       String
   startDate    DateTime?
   endDate      DateTime?
-
-  @@unique([disasterId, rescueTypeId])
+  source       String?
 }
 
 model Media {
@@ -204,7 +205,6 @@ model RescueType {
   updatedAt   DateTime               @updatedAt()
   deleted     DateTime?
   name        String
-  unit        String
   disaster    RescueTypeOnDisaster[]
 }
 

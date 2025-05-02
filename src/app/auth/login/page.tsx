@@ -23,11 +23,6 @@ type LoginFormType = z.infer<typeof loginFormSchema>;
 
 const LoginPage: React.FC = () => {
   const router = useRouter();
-  // useEffect(() => {
-  //   if (isAuthenticated()) {
-  //     router.push('/home');
-  //   }
-  // }, [router]);
   const isDev = process.env.NODE_ENV === 'development';
 
   // Sử dụng React Hook Form với Zod Resolver

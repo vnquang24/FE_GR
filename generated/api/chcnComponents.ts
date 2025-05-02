@@ -196,6 +196,7 @@ export type AuthControllerRefreshTokenError = Fetcher.ErrorWrapper<undefined>;
 
 export type AuthControllerRefreshTokenResponse = {
   accessToken?: string;
+  refreshToken?: string;
 };
 
 export type AuthControllerRefreshTokenVariables = {
@@ -285,6 +286,13 @@ export type AuthControllerCheckValidTokenHeaders = {
 export type AuthControllerCheckValidTokenError =
   Fetcher.ErrorWrapper<undefined>;
 
+export type AuthControllerCheckValidTokenResponse = {
+  /**
+   * @example true
+   */
+  isValid?: boolean;
+};
+
 export type AuthControllerCheckValidTokenVariables = {
   headers: AuthControllerCheckValidTokenHeaders;
 } & ChcnContext["fetcherOptions"];
@@ -294,7 +302,7 @@ export const fetchAuthControllerCheckValidToken = (
   signal?: AbortSignal,
 ) =>
   chcnFetch<
-    undefined,
+    AuthControllerCheckValidTokenResponse,
     AuthControllerCheckValidTokenError,
     undefined,
     AuthControllerCheckValidTokenHeaders,
@@ -310,7 +318,7 @@ export const fetchAuthControllerCheckValidToken = (
 export const useAuthControllerCheckValidToken = (
   options?: Omit<
     reactQuery.UseMutationOptions<
-      undefined,
+      AuthControllerCheckValidTokenResponse,
       AuthControllerCheckValidTokenError,
       AuthControllerCheckValidTokenVariables
     >,
@@ -319,7 +327,7 @@ export const useAuthControllerCheckValidToken = (
 ) => {
   const { fetcherOptions } = useChcnContext();
   return reactQuery.useMutation<
-    undefined,
+    AuthControllerCheckValidTokenResponse,
     AuthControllerCheckValidTokenError,
     AuthControllerCheckValidTokenVariables
   >({
@@ -647,6 +655,302 @@ export const useUsersControllerFindAll = <TData = undefined,>(
   });
 };
 
+export type MinioControllerCreateUploadUrlError =
+  Fetcher.ErrorWrapper<undefined>;
+
+export type MinioControllerCreateUploadUrlVariables = {
+  body: Schemas.UploadURLDto;
+} & ChcnContext["fetcherOptions"];
+
+export const fetchMinioControllerCreateUploadUrl = (
+  variables: MinioControllerCreateUploadUrlVariables,
+  signal?: AbortSignal,
+) =>
+  chcnFetch<
+    Schemas.UrlDto,
+    MinioControllerCreateUploadUrlError,
+    Schemas.UploadURLDto,
+    {},
+    {},
+    {}
+  >({
+    url: "/api/minio/create-upload-url",
+    method: "post",
+    ...variables,
+    signal,
+  });
+
+export const useMinioControllerCreateUploadUrl = (
+  options?: Omit<
+    reactQuery.UseMutationOptions<
+      Schemas.UrlDto,
+      MinioControllerCreateUploadUrlError,
+      MinioControllerCreateUploadUrlVariables
+    >,
+    "mutationFn"
+  >,
+) => {
+  const { fetcherOptions } = useChcnContext();
+  return reactQuery.useMutation<
+    Schemas.UrlDto,
+    MinioControllerCreateUploadUrlError,
+    MinioControllerCreateUploadUrlVariables
+  >({
+    mutationFn: (variables: MinioControllerCreateUploadUrlVariables) =>
+      fetchMinioControllerCreateUploadUrl(deepMerge(fetcherOptions, variables)),
+    ...options,
+  });
+};
+
+export type MinioControllerFindAllQueryParams = {
+  /**
+   * Đường dẫn thư mục (prefix)
+   *
+   * @example disasters/123e4567-e89b-12d3-a456-426614174000/
+   */
+  path?: string;
+  /**
+   * Bắt đầu sau object nào
+   *
+   * @example disasters/123e4567-e89b-12d3-a456-426614174000/image.jpg
+   */
+  startAfter?: string;
+  /**
+   * Số lượng tối đa object trả về
+   *
+   * @default 100
+   * @example 50
+   */
+  limit?: number;
+};
+
+export type MinioControllerFindAllError = Fetcher.ErrorWrapper<undefined>;
+
+export type MinioControllerFindAllResponse = Schemas.BucketItemDto[];
+
+export type MinioControllerFindAllVariables = {
+  queryParams?: MinioControllerFindAllQueryParams;
+} & ChcnContext["fetcherOptions"];
+
+export const fetchMinioControllerFindAll = (
+  variables: MinioControllerFindAllVariables,
+  signal?: AbortSignal,
+) =>
+  chcnFetch<
+    MinioControllerFindAllResponse,
+    MinioControllerFindAllError,
+    undefined,
+    {},
+    MinioControllerFindAllQueryParams,
+    {}
+  >({ url: "/api/minio", method: "get", ...variables, signal });
+
+export function minioControllerFindAllQuery(
+  variables: MinioControllerFindAllVariables,
+): {
+  queryKey: reactQuery.QueryKey;
+  queryFn: (options: QueryFnOptions) => Promise<MinioControllerFindAllResponse>;
+};
+
+export function minioControllerFindAllQuery(
+  variables: MinioControllerFindAllVariables | reactQuery.SkipToken,
+): {
+  queryKey: reactQuery.QueryKey;
+  queryFn:
+    | ((options: QueryFnOptions) => Promise<MinioControllerFindAllResponse>)
+    | reactQuery.SkipToken;
+};
+
+export function minioControllerFindAllQuery(
+  variables: MinioControllerFindAllVariables | reactQuery.SkipToken,
+) {
+  return {
+    queryKey: queryKeyFn({
+      path: "/api/minio",
+      operationId: "minioControllerFindAll",
+      variables,
+    }),
+    queryFn:
+      variables === reactQuery.skipToken
+        ? reactQuery.skipToken
+        : ({ signal }: QueryFnOptions) =>
+            fetchMinioControllerFindAll(variables, signal),
+  };
+}
+
+export const useSuspenseMinioControllerFindAll = <
+  TData = MinioControllerFindAllResponse,
+>(
+  variables: MinioControllerFindAllVariables,
+  options?: Omit<
+    reactQuery.UseQueryOptions<
+      MinioControllerFindAllResponse,
+      MinioControllerFindAllError,
+      TData
+    >,
+    "queryKey" | "queryFn" | "initialData"
+  >,
+) => {
+  const { queryOptions, fetcherOptions } = useChcnContext(options);
+  return reactQuery.useSuspenseQuery<
+    MinioControllerFindAllResponse,
+    MinioControllerFindAllError,
+    TData
+  >({
+    ...minioControllerFindAllQuery(deepMerge(fetcherOptions, variables)),
+    ...options,
+    ...queryOptions,
+  });
+};
+
+export const useMinioControllerFindAll = <
+  TData = MinioControllerFindAllResponse,
+>(
+  variables: MinioControllerFindAllVariables | reactQuery.SkipToken,
+  options?: Omit<
+    reactQuery.UseQueryOptions<
+      MinioControllerFindAllResponse,
+      MinioControllerFindAllError,
+      TData
+    >,
+    "queryKey" | "queryFn" | "initialData"
+  >,
+) => {
+  const { queryOptions, fetcherOptions } = useChcnContext(options);
+  return reactQuery.useQuery<
+    MinioControllerFindAllResponse,
+    MinioControllerFindAllError,
+    TData
+  >({
+    ...minioControllerFindAllQuery(
+      variables === reactQuery.skipToken
+        ? variables
+        : deepMerge(fetcherOptions, variables),
+    ),
+    ...options,
+    ...queryOptions,
+  });
+};
+
+export type MinioControllerPresignedGetObjectQueryParams = {
+  /**
+   * Tên object cần lấy URL download
+   */
+  objectName: string;
+};
+
+export type MinioControllerPresignedGetObjectError =
+  Fetcher.ErrorWrapper<undefined>;
+
+export type MinioControllerPresignedGetObjectVariables = {
+  queryParams: MinioControllerPresignedGetObjectQueryParams;
+} & ChcnContext["fetcherOptions"];
+
+export const fetchMinioControllerPresignedGetObject = (
+  variables: MinioControllerPresignedGetObjectVariables,
+  signal?: AbortSignal,
+) =>
+  chcnFetch<
+    Schemas.UrlDto,
+    MinioControllerPresignedGetObjectError,
+    undefined,
+    {},
+    MinioControllerPresignedGetObjectQueryParams,
+    {}
+  >({
+    url: "/api/minio/create-download-url",
+    method: "get",
+    ...variables,
+    signal,
+  });
+
+export function minioControllerPresignedGetObjectQuery(
+  variables: MinioControllerPresignedGetObjectVariables,
+): {
+  queryKey: reactQuery.QueryKey;
+  queryFn: (options: QueryFnOptions) => Promise<Schemas.UrlDto>;
+};
+
+export function minioControllerPresignedGetObjectQuery(
+  variables: MinioControllerPresignedGetObjectVariables | reactQuery.SkipToken,
+): {
+  queryKey: reactQuery.QueryKey;
+  queryFn:
+    | ((options: QueryFnOptions) => Promise<Schemas.UrlDto>)
+    | reactQuery.SkipToken;
+};
+
+export function minioControllerPresignedGetObjectQuery(
+  variables: MinioControllerPresignedGetObjectVariables | reactQuery.SkipToken,
+) {
+  return {
+    queryKey: queryKeyFn({
+      path: "/api/minio/create-download-url",
+      operationId: "minioControllerPresignedGetObject",
+      variables,
+    }),
+    queryFn:
+      variables === reactQuery.skipToken
+        ? reactQuery.skipToken
+        : ({ signal }: QueryFnOptions) =>
+            fetchMinioControllerPresignedGetObject(variables, signal),
+  };
+}
+
+export const useSuspenseMinioControllerPresignedGetObject = <
+  TData = Schemas.UrlDto,
+>(
+  variables: MinioControllerPresignedGetObjectVariables,
+  options?: Omit<
+    reactQuery.UseQueryOptions<
+      Schemas.UrlDto,
+      MinioControllerPresignedGetObjectError,
+      TData
+    >,
+    "queryKey" | "queryFn" | "initialData"
+  >,
+) => {
+  const { queryOptions, fetcherOptions } = useChcnContext(options);
+  return reactQuery.useSuspenseQuery<
+    Schemas.UrlDto,
+    MinioControllerPresignedGetObjectError,
+    TData
+  >({
+    ...minioControllerPresignedGetObjectQuery(
+      deepMerge(fetcherOptions, variables),
+    ),
+    ...options,
+    ...queryOptions,
+  });
+};
+
+export const useMinioControllerPresignedGetObject = <TData = Schemas.UrlDto,>(
+  variables: MinioControllerPresignedGetObjectVariables | reactQuery.SkipToken,
+  options?: Omit<
+    reactQuery.UseQueryOptions<
+      Schemas.UrlDto,
+      MinioControllerPresignedGetObjectError,
+      TData
+    >,
+    "queryKey" | "queryFn" | "initialData"
+  >,
+) => {
+  const { queryOptions, fetcherOptions } = useChcnContext(options);
+  return reactQuery.useQuery<
+    Schemas.UrlDto,
+    MinioControllerPresignedGetObjectError,
+    TData
+  >({
+    ...minioControllerPresignedGetObjectQuery(
+      variables === reactQuery.skipToken
+        ? variables
+        : deepMerge(fetcherOptions, variables),
+    ),
+    ...options,
+    ...queryOptions,
+  });
+};
+
 export type QueryOperation =
   | {
       path: "/api/health";
@@ -662,4 +966,16 @@ export type QueryOperation =
       path: "/api/users/all";
       operationId: "usersControllerFindAll";
       variables: UsersControllerFindAllVariables | reactQuery.SkipToken;
+    }
+  | {
+      path: "/api/minio";
+      operationId: "minioControllerFindAll";
+      variables: MinioControllerFindAllVariables | reactQuery.SkipToken;
+    }
+  | {
+      path: "/api/minio/create-download-url";
+      operationId: "minioControllerPresignedGetObject";
+      variables:
+        | MinioControllerPresignedGetObjectVariables
+        | reactQuery.SkipToken;
     };

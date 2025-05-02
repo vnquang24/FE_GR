@@ -41,3 +41,46 @@ export type RefreshTokenDto = {
    */
   refreshToken: string;
 };
+
+export type UploadURLDto = {
+  /**
+   * Đường dẫn (path) của file cần tạo URL upload
+   *
+   * @example disasters/123e4567-e89b-12d3-a456-426614174000/image.jpg
+   */
+  path: string;
+};
+
+export type UrlDto = {
+  /**
+   * URL presigned để upload/download
+   *
+   * @example https://minio-server.example.com/bucket-name/object-key?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=...
+   */
+  url: string;
+};
+
+export type BucketItemDto = {
+  /**
+   * Tên của object
+   */
+  name: string;
+  /**
+   * Kích thước của object (bytes)
+   */
+  size: number;
+  /**
+   * ETag của object
+   */
+  etag: string;
+  /**
+   * Prefix của object (nếu là thư mục)
+   */
+  prefix: string;
+  /**
+   * Thời gian chỉnh sửa cuối cùng
+   *
+   * @format date-time
+   */
+  lastModified: string;
+};

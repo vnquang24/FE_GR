@@ -1,5 +1,5 @@
 import { setCookie, getCookie, deleteCookie } from 'cookies-next';
-import { fetchAuthControllerLogin, fetchAuthControllerRegister, fetchAuthControllerLogout } from '@/generated/api/chcnComponents';
+import { fetchAuthControllerLogin, fetchAuthControllerRegister, fetchAuthControllerLogout, fetchAuthControllerCheckValidToken } from '@/generated/api/chcnComponents';
 import { jwtDecode } from 'jwt-decode';
 import ms from 'ms'; // Thêm import này
 
@@ -15,7 +15,7 @@ interface JwtPayload {
 // Hàm chuyển đổi chuỗi thời gian JWT thành giây
 const parseJwtExpiresIn = (expiresIn: string): number => {
   try {
-    console.log(ms(expiresIn as ms.StringValue) / 1000);
+    console.log("Đây là khoảng thời gian  convert", ms(expiresIn as ms.StringValue) / 1000);
     // Chuyển đổi từ định dạng như "1m", "1d" sang milliseconds, sau đó chia cho 1000 để có giây
     return ms(expiresIn as ms.StringValue) / 1000;
   } catch (error) {
@@ -25,8 +25,8 @@ const parseJwtExpiresIn = (expiresIn: string): number => {
 };
 
 // Lấy thời gian hết hạn từ biến môi trường
-const JWT_EXPIRES_IN = process.env.NEXT_PUBLIC_JWT_EXPIRES_IN || '15m';
-const JWT_REFRESH_EXPIRES_IN = process.env.NEXT_PUBLIC_JWT_REFRESH_EXPIRES_IN || '30d';
+const JWT_EXPIRES_IN = process.env.NEXT_PUBLIC_JWT_EXPIRES_IN || '60m';
+const JWT_REFRESH_EXPIRES_IN = process.env.NEXT_PUBLIC_JWT_REFRESH_EXPIRES_IN || '7d';
 
 // Chuyển đổi thành giây để sử dụng trong maxAge của cookie
 const accessTokenMaxAge = parseJwtExpiresIn(JWT_EXPIRES_IN) + 10;
@@ -50,22 +50,59 @@ export const getUserId = (): string | null => {
   }
 };
 
+export const validateTokenWithServer = async (): Promise<boolean> => {
+  try {
+    const accessToken = getCookie('accessToken') as string;
+    if (!accessToken) return false;
+
+    const response = await fetchAuthControllerCheckValidToken({
+      headers: {
+        authorization: `Bearer ${accessToken}`
+      }
+    });
+
+    if (!response) {
+      console.error('No response from server');
+      return false;
+    } else {
+      console.log("Đây là response từ hàm validate", response.isValid);
+      return response.isValid || false;
+    }
+  } catch (error) {
+    console.error('Error validating token:', error);
+    return false;
+  }
+};
 /**
  * Kiểm tra xem token có còn hạn hay không
  * @returns true nếu token còn hạn, false nếu hết hạn hoặc không có token
  */
-export const isTokenValid = (): boolean => {
+export const isTokenValid = async (): Promise<boolean> => {
   try {
-    const accessToken = getCookie('accessToken') as string | undefined;
+    // 1. Kiểm tra nhanh ở local
+    const accessToken = getCookie('accessToken') as string;
     if (!accessToken) return false;
 
     const decoded = jwtDecode<JwtPayload>(accessToken);
-    if (!decoded || !decoded.exp) return false;
-    console.log(decoded);
-    // So sánh thời gian hết hạn với thời gian hiện tại (tính bằng giây)
     const currentTime = Math.floor(Date.now() / 1000);
-    console.log(currentTime);
-    return decoded.exp > currentTime;
+
+    // Nếu token đã hết hạn, không cần kiểm tra server
+    if (decoded.exp <= currentTime) return false;
+
+    // 2. Kiểm tra với server (có thể cache kết quả trong session storage)
+    const lastValidated = sessionStorage.getItem('lastTokenValidation');
+    const now = Date.now();
+
+    // Chỉ kiểm tra với server mỗi phút/request quan trọng
+    if (!lastValidated || now - parseInt(lastValidated) > 60000) {
+      const isValid = await validateTokenWithServer();
+      if (isValid) {
+        sessionStorage.setItem('lastTokenValidation', now.toString());
+      }
+      return isValid;
+    }
+
+    return true;
   } catch (error) {
     console.error('Error validating token:', error);
     return false;
@@ -86,6 +123,8 @@ export const register = async (email: string, password: string, name: string, ph
       }
     });
     console.log(response);
+    console.log("Thời gian tồn tại của access token:", accessTokenMaxAge);
+    console.log("Thời gian tồn tại của refresh token:", refreshTokenMaxAge);
     if (response && response.accessToken && response.refreshToken) {
       // Lưu tokens
       setCookie('accessToken', response.accessToken, {
@@ -119,7 +158,11 @@ export const login = async (email: string, password: string): Promise<boolean> =
         password,
       }
     });
+    console.log("Thời gian tồn tại của access token:", accessTokenMaxAge);
+    console.log("Thời gian tồn tại của refresh token:", refreshTokenMaxAge);
     if (data && data.accessToken && data.refreshToken) {
+        console.log("Đây là access token", data.accessToken);
+        console.log("Đây là refresh token", data.refreshToken);
       // Lưu tokens
       setCookie('accessToken', data.accessToken, {
         maxAge: accessTokenMaxAge,

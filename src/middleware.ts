@@ -1,28 +1,39 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
+// Định nghĩa danh sách các routes công khai không cần xác thực
+const publicRoutes = [
+  '/auth/login',
+  '/auth/register'
+]
+
+// Tối ưu middleware để xử lý nhiều requests cùng lúc
 export function middleware(request: NextRequest) {
   // Kiểm tra nếu đang ở trang chủ
   if (request.nextUrl.pathname === '/') {
     return NextResponse.redirect(new URL('/auth/login', request.url))
   }
   
-  // Lấy token từ cookies
-  const accessToken = request.cookies.get('accessToken')?.value
+  // Nhanh chóng kiểm tra nếu trang là public route
+  if (publicRoutes.some(route => request.nextUrl.pathname.startsWith(route))) {
+    // Kiểm tra token nếu người dùng đã đăng nhập và đang truy cập trang auth
+    const accessToken = request.cookies.get('accessToken')?.value
+    if (accessToken) {
+      return NextResponse.redirect(new URL('/home', request.url))
+    }
+    return NextResponse.next()
+  }
   
-  // Xác định trang hiện tại có phải trang authentication hay không
-  const isAuthPage = request.nextUrl.pathname.startsWith('/auth')
-
-  // Nếu đã đăng nhập (có access token) và cố truy cập trang login
-  if (accessToken && isAuthPage) {
-    return NextResponse.redirect(new URL('/home', request.url))
+  // Xử lý routes được bảo vệ
+  const accessToken = request.cookies.get('accessToken')?.value
+  if (!accessToken) {
+    // Tạo URL chuyển hướng với returnUrl để sau khi đăng nhập có thể quay lại
+    const loginUrl = new URL('/auth/login', request.url)
+    loginUrl.searchParams.set('returnUrl', request.nextUrl.pathname)
+    return NextResponse.redirect(loginUrl)
   }
-
-  // Nếu chưa đăng nhập (không có access token) và cố truy cập trang được bảo vệ
-  if (!accessToken && !isAuthPage) {
-    return NextResponse.redirect(new URL('/auth/login', request.url))
-  }
-
+  
+  // Đã xác thực, cho phép tiếp tục
   return NextResponse.next()
 }
 

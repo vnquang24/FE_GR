@@ -61,7 +61,6 @@ const RescueResourceTypePage: React.FC = () => {
       id: true,
       name: true,
       description: true,
-      unit: true
     },
     orderBy: {
       name: 'asc'
@@ -149,12 +148,6 @@ const RescueResourceTypePage: React.FC = () => {
       className: 'font-semibold text-gray-700'
     },
     {
-      header: 'Đơn vị',
-      accessorKey: 'unit',
-      cell: (item: any) => <div className="text-gray-600">{item.unit || "Không có đơn vị"}</div>,
-      className: 'font-semibold text-gray-700'
-    },
-    {
       header: 'Thao tác',
       cell: (item: any) => (
         <div className="flex justify-center space-x-2">
@@ -228,7 +221,7 @@ const RescueResourceTypePage: React.FC = () => {
             </div>
             <Button
               className="bg-green-500 hover:bg-green-600 text-white"
-              onClick={() => handleOpenAddEditModal({ id: '', name: '', description: '', unit: '' })}
+              onClick={() => handleOpenAddEditModal({ id: '', name: '', description: ''})}
             >
               <Plus size={16} className="mr-1" /> Thêm mới
             </Button>

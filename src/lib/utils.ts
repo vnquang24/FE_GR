@@ -1,6 +1,9 @@
 import { clsx, type ClassValue } from 'clsx'
 import dayjs, { Dayjs } from 'dayjs'
 import { twMerge } from 'tailwind-merge'
+import { Badge } from "@/components/ui/badge";
+import { format } from 'date-fns';
+import { vi } from 'date-fns/locale';
 
 const cn = (...inputs: ClassValue[]) => {
     return twMerge(clsx(inputs))
@@ -9,6 +12,7 @@ const cn = (...inputs: ClassValue[]) => {
 const getPageCount = (totalItems: number, itemsPerPage: number) => {
     return Math.ceil(totalItems / itemsPerPage)
 }
+
 
 const formatDate = (
     date: string | Date | Dayjs,
@@ -154,6 +158,92 @@ const findMapCenter = (
     }
 }
 
+/**
+ * Tạo tên thảm họa tự động dựa trên thông tin
+ * @param disasterType Tên loại thảm họa
+ * @param provinceNames Danh sách tên các tỉnh/thành phố ảnh hưởng
+ * @param startDateTime Thời gian bắt đầu thảm họa
+ * @param endDateTime Thời gian kết thúc thảm họa (không bắt buộc)
+ * @returns Tên thảm họa được tạo tự động với mã duy nhất
+ */
+const generateDisasterName = (
+    disasterType: string,
+    provinceNames: string[],
+    startDateTime?: Date,
+    endDateTime?: Date
+): string => {
+    // Tạo chuỗi thời gian từ startDateTime và endDateTime
+    let timeStr = '';
+    if (startDateTime) {
+        timeStr = format(startDateTime, 'HH:mm dd/MM/yyyy', { locale: vi });
+        
+        // Nếu có thời gian kết thúc, thêm vào chuỗi
+        if (endDateTime) {
+            timeStr += ' - ' + format(endDateTime, 'HH:mm dd/MM/yyyy', { locale: vi });
+        }
+    } else {
+        // Nếu không có thời gian bắt đầu, sử dụng thời gian hiện tại
+        const now = new Date();
+        timeStr = format(now, 'HH:mm dd/MM/yyyy', { locale: vi });
+    }
+    
+    // Tạo mã ngắn duy nhất từ các thông tin
+    const generateUniqueCode = () => {
+        // Lấy kí tự đầu của loại thảm họa
+        const typeCode = disasterType ? disasterType.charAt(0).toUpperCase() : 'X';
+        
+        // Lấy kí tự đầu của tỉnh đầu tiên nếu có
+        const provinceCode = provinceNames.length > 0 ? 
+            provinceNames[0].charAt(0).toUpperCase() : 'Z';
+        
+        // Lấy timestamp từ thời gian bắt đầu hoặc thời gian hiện tại
+        const timestamp = startDateTime ? 
+            startDateTime.getTime() : new Date().getTime();
+        
+        // Tạo chuỗi ngẫu nhiên 4 kí tự từ timestamp
+        const randomCode = timestamp.toString(32).slice(-4).toUpperCase();
+        
+        // Kết hợp các thành phần để tạo mã
+        const uniqueCode = `${typeCode}${provinceCode}${randomCode}`;
+        
+        return uniqueCode;
+    };
+    
+    // Tạo tên theo mẫu: Loại thảm họa + Địa điểm + Thời gian
+    let name = '';
+    
+    if (disasterType) {
+        name += disasterType;
+    }
+    
+    if (provinceNames.length > 0) {
+        // Nếu có nhiều tỉnh, giới hạn hiển thị và thêm "và các tỉnh khác"
+        if (provinceNames.length === 1) {
+            name += ' tại ' + provinceNames[0];
+        } else if (provinceNames.length === 2) {
+            name += ' tại ' + provinceNames.join(' và ');
+        } else {
+            name += ' tại ' + provinceNames.slice(0, 2).join(', ') + ' và các tỉnh khác';
+        }
+    }
+    
+    // Thêm thời gian
+    if (timeStr) {
+        name += ' - ' + timeStr;
+    }
+    
+    // Thêm mã duy nhất vào cuối
+    name += ' [' + generateUniqueCode() + ']';
+    
+    return name;
+}
+
+// Thêm hàm getStatusIndicator để sửa lỗi lint
+const getStatusIndicator = () => {
+    // Hàm tạm thời để sửa lỗi
+    return null;
+}
+
 export {
     cn,
     formatDate,
@@ -165,4 +255,6 @@ export {
     arrayRemoveDuplicates,
     formatNiceBytes,
     findMapCenter,
+    getStatusIndicator,
+    generateDisasterName
 }

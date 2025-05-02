@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Roboto } from "next/font/google";
 import "./globals.css";
 import Providers from '@/components/providers'; // Tạo một component mới
+import 'leaflet/dist/leaflet.css';
 
 const inter = Inter({
   subsets: ['latin'],

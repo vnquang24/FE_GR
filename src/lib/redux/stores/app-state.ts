@@ -6,6 +6,10 @@ const appState: AppState = {
     setIsShowSidebar: action((state, payload) => {
         state.isShowSidebar = payload
     }),
+    operationNowPage: 1,
+    setOperationNowPage: action((state, payload) => {
+        state.operationNowPage = payload
+    })
 }
 
 export { appState }

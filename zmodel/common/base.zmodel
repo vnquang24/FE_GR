@@ -5,7 +5,7 @@ abstract model Base {
   updatedAt  DateTime @updatedAt
   deleted DateTime? @omit
 
-  @@deny('read', deleted != null)
+  // @@deny('read', deleted != null)
   @@allow('all', auth().role == 'ADMIN')
   @@allow('read', auth() != null)
 }
