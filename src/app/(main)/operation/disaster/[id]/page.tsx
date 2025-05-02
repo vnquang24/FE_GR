@@ -1413,18 +1413,18 @@ const DisasterDetailPage = () => {
                     {
                       header: "Thao tác",
                       cell: (item) => (
-                        <div className="text-right">
+                        <div className="text-center">
                           <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => handleDeleteDataField(item.id)}
                             className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-5 w-5" />
                           </Button>
                         </div>
                       ),
-                      className: "text-right"
+                      className: "text-center"
                     }
                   ]}
                   data={disaster.dataFields
@@ -1526,18 +1526,18 @@ const DisasterDetailPage = () => {
                     {
                       header: "Thao tác",
                       cell: (item) => (
-                        <div className="text-right">
+                        <div className="text-center">
                           <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => handleDeleteDataField(item.id)}
                             className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-5 w-5" />
                           </Button>
                         </div>
                       ),
-                      className: "text-right"
+                      className: "text-center"
                     }
                   ]}
                   data={disaster.dataFields
@@ -1662,18 +1662,18 @@ const DisasterDetailPage = () => {
                     {
                       header: "Thao tác",
                       cell: (item) => (
-                        <div className="text-right">
+                        <div className="text-center">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleUpdateRescueType(item.id)}
                             className="h-8 text-blue-500 hover:text-blue-700 hover:bg-blue-50"
                           >
-                            <Save className="h-3.5 w-3.5 mr-1" /> Lưu
+                            <Save className="h-5 w-5 mr-1" /> Lưu
                           </Button>
                         </div>
                       ),
-                      className: "text-right"
+                      className: "text-center"
                     }
                   ]}
                   data={sortedRescueTypes.map(rescueType => ({
@@ -1740,7 +1740,7 @@ const DisasterDetailPage = () => {
                     {
                       header: "Thao tác",
                       cell: (item) => (
-                        <div className="text-right">
+                        <div className="text-center">
                           <Link 
                             href={`/operation/zone/${item.id}`} 
                             className="text-blue-500 hover:text-blue-700 text-sm inline-flex items-center"
@@ -1749,7 +1749,7 @@ const DisasterDetailPage = () => {
                           </Link>
                         </div>
                       ),
-                      className: "text-right"
+                      className: "text-center"
                     }
                   ]}
                   data={disaster.zone}
