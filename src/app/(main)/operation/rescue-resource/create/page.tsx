@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -49,6 +49,9 @@ const CreateRescueResourcePage: React.FC = () => {
   const [disasterStartDate, setDisasterStartDate] = useState<Date | undefined>(undefined);
   const [disasterEndDate, setDisasterEndDate] = useState<Date | undefined>(undefined);
   const [openDisasterSelect, setOpenDisasterSelect] = useState(false);
+  // Thêm state cho tìm kiếm thảm họa
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [filteredDisasters, setFilteredDisasters] = useState<any[]>([]);
   
   // Mutation để tạo nguồn lực cứu hộ mới
   const createRescueTypeMutation = useCreateRescueType();
@@ -59,7 +62,11 @@ const CreateRescueResourcePage: React.FC = () => {
   // Lấy danh sách thảm họa hiện có
   const { data: disasters, isLoading: isLoadingDisasters } = useFindManyDisaster({
     where: {
-      deleted: null
+      deleted: null,
+      name: {
+        contains: searchQuery,
+        mode: 'insensitive'
+      }
     },
     orderBy: {
       createdAt: 'desc'
@@ -68,6 +75,20 @@ const CreateRescueResourcePage: React.FC = () => {
       disasterType: true
     }
   });
+  
+  // Lọc danh sách thảm họa theo tên khi có tìm kiếm
+  // useEffect(() => {
+  //   if (disasters) {
+  //     if (!searchQuery) {
+  //       setFilteredDisasters(disasters);
+  //     } else {
+  //       const filtered = disasters.filter(disaster => 
+  //         disaster.name.toLowerCase().includes(searchQuery.toLowerCase())
+  //       );
+  //       setFilteredDisasters(filtered);
+  //     }
+  //   }
+  // }, [disasters, searchQuery]);
   
   // Lấy danh sách data field để làm đơn vị
   const { data: dataFields, isLoading: isLoadingDataFields } = useFindManyDataField({
@@ -345,7 +366,12 @@ const CreateRescueResourcePage: React.FC = () => {
                   </PopoverTrigger>
                   <PopoverContent className="w-full p-0 bg-white">
                     <Command>
-                      <CommandInput placeholder="Tìm kiếm thảm họa..." className="h-9" />
+                      <CommandInput 
+                        placeholder="Tìm kiếm thảm họa..." 
+                        className="h-9"
+                        value={searchQuery}
+                        onValueChange={setSearchQuery}
+                      />
                       <CommandEmpty>Không tìm thấy thảm họa</CommandEmpty>
                       <CommandGroup>
                         <div className="h-60 overflow-y-auto">
@@ -353,8 +379,8 @@ const CreateRescueResourcePage: React.FC = () => {
                             <div className="flex items-center justify-center p-2">
                               <Loader2 className="h-4 w-4 animate-spin mr-2" /> Đang tải...
                             </div>
-                          ) : disasters && disasters.length > 0 ? (
-                            disasters.map((disaster) => {
+                          ) : filteredDisasters && filteredDisasters.length > 0 ? (
+                            filteredDisasters.map((disaster) => {
                               const isSelected = currentDisaster.includes(disaster.id);
                               return (
                                 <CommandItem
@@ -633,4 +659,4 @@ const CreateRescueResourcePage: React.FC = () => {
   );
 };
 
-export default CreateRescueResourcePage; 
+export default CreateRescueResourcePage;

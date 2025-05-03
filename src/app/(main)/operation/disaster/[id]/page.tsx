@@ -6,7 +6,7 @@ import { Disaster } from '@prisma/client';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AlertTriangle, Calendar, Clipboard, Edit, Globe, Info, MapPin, ArrowLeft, AlertCircle, Shield, BookOpen, Clock, FileType, Users, Image, Activity, Building, FileText, Map, Save, X, Plus, Trash2 } from 'lucide-react';
+import { AlertTriangle, Calendar, Clipboard, Edit, Globe, Info, MapPin, ArrowLeft, AlertCircle, Shield, BookOpen, Clock, FileType, Users, Image, Activity, Building, FileText, Map, Save, X, Plus, Trash2, Upload } from 'lucide-react';
 import { toast } from '@/components/ui/toast';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -24,7 +24,7 @@ import { useStoreState } from '@/lib/redux/hook';
 import HierarchicalSelect, { DataFieldNode } from '@/components/wrapper/hierarchical-select';
 import { generateDisasterName } from '@/lib/utils';
 import MediaUploader from '@/components/wrapper/media-uploader';
-import {getUserId} from '@/utils/auth';
+import { getUserId } from '@/utils/auth';
 // Tạo kiểu dữ liệu mở rộng từ DataField của Prisma
 type DataFieldWithOptimistic = Partial<DataField> & {
   id: string;
@@ -122,9 +122,9 @@ const DisasterDetailPage = () => {
     address: null
   });
 
-  // State for media download URLs
-  const [mediaViewUrls, setMediaViewUrls] = useState<{[key: string]: string}>({});
-  
+  // State cho dialog tải lên media
+  const [showMediaUploadDialog, setShowMediaUploadDialog] = useState(false);
+
   // Lấy dữ liệu thảm họa
   const { data: disaster, isLoading, error, refetch } = useFindUniqueDisaster({
     where: { id: disasterId },
@@ -140,7 +140,7 @@ const DisasterDetailPage = () => {
       media: {
         include: {
           coordinates: true,
-          user: true
+          user: true,
         }
       },
       dataFields: {
@@ -155,69 +155,13 @@ const DisasterDetailPage = () => {
         }
       }
     },
-  
+
   });
-  
+
   // Function to handle media refresh after upload
   const handleMediaUploadSuccess = useCallback(() => {
     refetch();
   }, [refetch]);
-
-  // Function to get presigned URLs for media viewing
-  const getMediaViewUrl = useCallback(async (objectName: string) => {
-    try {
-      // Extract the object name from the full URL if needed
-      const extractedObjectName = objectName.includes('/') 
-        ? objectName.split('/').slice(-2).join('/') // Get disasterId/filename format
-        : objectName;
-      
-      // Sử dụng trực tiếp với query params thay vì mutateQuery
-      const response = await fetch(`/api/minio/create-download-url?objectName=${encodeURIComponent(extractedObjectName)}`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to get presigned URL');
-      }
-      
-      const data = await response.json();
-      return data.url;
-    } catch (error) {
-      console.error("Error getting presigned URL:", error);
-      return objectName; // Fall back to original URL if error
-    }
-  }, []);
-
-  // Load presigned URLs for media when tab changes or media list updates
-  useEffect(() => {
-    if (activeTab === 'media' && disaster?.media && disaster.media.length > 0) {
-      const loadMediaUrls = async () => {
-        const urlPromises = disaster.media.map(async (mediaItem) => {
-          // Only get presigned URLs for items we don't already have
-          if (!mediaViewUrls[mediaItem.id]) {
-            const viewUrl = await getMediaViewUrl(mediaItem.url);
-            return { id: mediaItem.id, url: viewUrl };
-          }
-          return null;
-        });
-
-        const results = await Promise.all(urlPromises);
-        const newUrls = results.reduce((acc, item) => {
-          if (item) {
-            acc[item.id] = item.url;
-          }
-          return acc;
-        }, {} as {[key: string]: string});
-
-        setMediaViewUrls(prev => ({...prev, ...newUrls}));
-      };
-
-      loadMediaUrls();
-    }
-  }, [activeTab, disaster?.media, getMediaViewUrl, mediaViewUrls]);
 
   // Mutation để cập nhật thảm họa
   const updateDisasterMutation = useUpdateDisaster({
@@ -467,13 +411,13 @@ const DisasterDetailPage = () => {
     if (disaster && classification.disasterTypeId) {
       // Lấy tên loại thảm họa
       const disasterType = disasterTypes?.find(type => type.id === classification.disasterTypeId)?.name || '';
-      
+
       // Lấy tên các tỉnh đã chọn
       const selectedProvinceNames = adminData.selectedProvinces.map(provinceId => {
         const province = provinces?.find(p => p.id === provinceId);
         return province?.name || '';
       }).filter(Boolean);
-      
+
       // Tạo tên thảm họa sử dụng hàm từ utils.ts
       const generatedName = generateDisasterName(
         disasterType,
@@ -481,7 +425,7 @@ const DisasterDetailPage = () => {
         timeData.startDateTime,
         timeData.endDateTime
       );
-      
+
       // Cập nhật state với tên mới
       setBasicInfo(prev => ({
         ...prev,
@@ -622,14 +566,14 @@ const DisasterDetailPage = () => {
       });
     }
   }, [
-    basicInfo, 
-    classification, 
-    timeData, 
-    adminData, 
-    disasterId, 
-    updateDisasterMutation, 
-    disaster, 
-    dataFieldValues, 
+    basicInfo,
+    classification,
+    timeData,
+    adminData,
+    disasterId,
+    updateDisasterMutation,
+    disaster,
+    dataFieldValues,
     updateDataFieldMutation
   ]);
 
@@ -839,16 +783,16 @@ const DisasterDetailPage = () => {
           address: coordinateData.address
         }
       });
-      
+
       // Đóng modal khi cập nhật thành công
       setIsCoordinateModalOpen(false);
-      
+
       // Thông báo thành công
       toast.success({
         title: "Thành công",
         description: "Đã cập nhật tọa độ thành công"
       });
-      
+
       // Làm mới dữ liệu
       refetch();
     } catch (error: any) {
@@ -1018,24 +962,24 @@ const DisasterDetailPage = () => {
   // Sắp xếp danh sách cứu hộ theo thời gian bắt đầu từ gần hiện tại nhất đến xa nhất
   const sortedRescueTypes = useMemo(() => {
     if (!disaster?.rescueTypes) return [];
-    
+
     return [...disaster.rescueTypes].sort((a, b) => {
       // Lấy thời gian bắt đầu từ state, nếu không có thì lấy từ dữ liệu
       const aStartDate = rescueTypeStartDates[a.id] || a.startDate;
       const bStartDate = rescueTypeStartDates[b.id] || b.startDate;
-      
+
       // Nếu cả hai đều không có ngày bắt đầu, giữ nguyên thứ tự
       if (!aStartDate && !bStartDate) return 0;
-      
+
       // Đưa những mục không có ngày bắt đầu xuống cuối
       if (!aStartDate) return 1;
       if (!bStartDate) return -1;
-      
+
       // Tính khoảng cách từ hiện tại đến ngày bắt đầu
       const now = new Date();
       const aDiff = Math.abs(now.getTime() - new Date(aStartDate).getTime());
       const bDiff = Math.abs(now.getTime() - new Date(bStartDate).getTime());
-      
+
       // Sắp xếp từ gần đến xa
       return aDiff - bDiff;
     });
@@ -1050,126 +994,32 @@ const DisasterDetailPage = () => {
             <Image className="h-5 w-5 text-blue-500 mr-2" />
             Hình ảnh & Media
           </CardTitle>
-          {disaster && (
-            <MediaUploader
-              disasterId={disaster.id}
-              onSuccess={handleMediaUploadSuccess}
-              disasterCoordinateId={disaster.coordinate?.id}
-              userId={userID || ''}
-            />
-          )}
+          <Button
+            onClick={() => setShowMediaUploadDialog(true)}
+            variant="outline"
+            size="sm"
+            className="flex items-center bg-green-50 text-green-600 border-green-200 hover:bg-green-100"
+          >
+            <Upload className="h-4 w-4 mr-1" /> Tải lên hình ảnh/media
+          </Button>
         </div>
       </CardHeader>
-      <CardContent className="p-3">
-        {disaster?.media && disaster.media.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            {disaster.media.map((item) => (
-              <div key={item.id} className="border rounded-md overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow duration-200">
-                <div className="aspect-video bg-gray-100 relative">
-                  {item.mediaType === 'IMAGE' ? (
-                    <a 
-                      href={mediaViewUrls[item.id] || item.url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="block w-full h-full"
-                    >
-                      <img
-                        src={mediaViewUrls[item.id] || item.url}
-                        alt={item.description || 'Hình ảnh thảm họa'}
-                        className="w-full h-full object-cover hover:opacity-90 transition-opacity"
-                        onError={(e) => {
-                          // Đặt placeholder khi ảnh không thể tải được
-                          e.currentTarget.src = 'https://placehold.co/400x300?text=Không+thể+tải+ảnh';
-                          e.currentTarget.className = 'w-full h-full object-contain';
-                        }}
-                      />
-                    </a>
-                  ) : item.mediaType === 'VIDEO' ? (
-                    <div className="w-full h-full flex items-center justify-center bg-gray-900">
-                      <video
-                        src={mediaViewUrls[item.id] || item.url}
-                        controls
-                        className="max-h-full max-w-full"
-                        onError={(e) => {
-                          // Hiển thị thông báo lỗi khi video không thể tải được
-                          const parent = e.currentTarget.parentElement;
-                          if (parent) {
-                            parent.innerHTML = `
-                              <div class="w-full h-full flex flex-col items-center justify-center text-white">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                                <p class="text-sm">Không thể tải video</p>
-                              </div>
-                            `;
-                          }
-                        }}
-                      ></video>
-                    </div>
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                      <audio
-                        src={mediaViewUrls[item.id] || item.url}
-                        controls
-                        className="w-4/5"
-                        onError={(e) => {
-                          // Hiển thị thông báo lỗi khi âm thanh không thể tải được
-                          const parent = e.currentTarget.parentElement;
-                          if (parent) {
-                            parent.innerHTML = `
-                              <div class="w-full h-full flex flex-col items-center justify-center text-gray-500">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                                <p class="text-sm">Không thể tải âm thanh</p>
-                              </div>
-                            `;
-                          }
-                        }}
-                      ></audio>
-                    </div>
-                  )}
-                </div>
-                <div className="p-3">
-                  <div className="flex justify-between items-center mb-1">
-                    <div className="text-xs text-gray-500">
-                      {item.mediaType === 'IMAGE' ? 'Hình ảnh' : item.mediaType === 'VIDEO' ? 'Video' : 'Âm thanh'}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {new Date(item.createdAt).toLocaleDateString('vi-VN')}
-                    </div>
-                  </div>
-                  <p className="text-sm line-clamp-2">{item.description || "Không có mô tả"}</p>
-                  <div className="mt-2 text-xs text-gray-500">
-                    <div className="flex items-center">
-                      <Users className="h-3 w-3 mr-1" />
-                      <span className="truncate">{item.user?.name || "Không xác định"}</span>
-                    </div>
-                    {item.coordinates && (
-                      <div className="flex items-center mt-1">
-                        <MapPin className="h-3 w-3 mr-1" />
-                        <span className="truncate">{item.coordinates.address || `${item.coordinates.lat.toFixed(4)}, ${item.coordinates.lng.toFixed(4)}`}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8 bg-gray-50 rounded-md">
-            <Image className="h-10 w-10 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-500 mb-2">Không có hình ảnh hoặc media</p>
-            <p className="text-sm text-gray-400 mb-4">Chưa có hình ảnh hoặc media nào được đăng tải cho thảm họa này.</p>
-            {disaster && (
-              <MediaUploader
-                disasterId={disaster.id}
-                onSuccess={handleMediaUploadSuccess}
-                disasterCoordinateId={disaster.coordinate?.id}
-                userId={userID || ''}
-              />
-            )}
-          </div>
+      {disaster &&
+        (
+          <MediaUploader
+            disasterId={disaster.id}
+            disasterCoordinateId={disaster.coordinate?.id}
+            userId={userID || ''}
+            showGallery={true}
+            initialMedia={disaster?.media || []}
+            onSuccess={handleMediaUploadSuccess}
+            showUploadButton={false}
+            isUploadDialogOpen={showMediaUploadDialog}
+            onUploadDialogOpenChange={setShowMediaUploadDialog}
+          />
         )}
-      </CardContent>
     </Card>
-  ), [disaster, handleMediaUploadSuccess, mediaViewUrls]);
+  ), [disaster, handleMediaUploadSuccess, userID, showMediaUploadDialog]);
 
   if (isLoading) {
     return (
@@ -1400,7 +1250,7 @@ const DisasterDetailPage = () => {
                       accessorKey: "value",
                       cell: (item) => (
                         <div className="flex items-center">
-                          <Input 
+                          <Input
                             type="number"
                             value={dataFieldValues[item.id] !== undefined ? dataFieldValues[item.id] : item.value}
                             onChange={(e) => handleDataFieldValueChange(item.id, e.target.value)}
@@ -1451,7 +1301,7 @@ const DisasterDetailPage = () => {
                   }
                   emptyState={
                     <TableRow>
-                      <TableCell colSpan={3} className="text-center py-8">
+                      <TableCell colSpan={3} className="h-[300px]">
                         <div className="text-center py-8 bg-gray-50 rounded-md">
                           <Activity className="h-10 w-10 text-gray-400 mx-auto mb-3" />
                           <p className="text-gray-500 mb-2">Không có số liệu thảm họa</p>
@@ -1513,7 +1363,7 @@ const DisasterDetailPage = () => {
                       accessorKey: "value",
                       cell: (item) => (
                         <div className="flex items-center">
-                          <Input 
+                          <Input
                             type="number"
                             value={dataFieldValues[item.id] !== undefined ? dataFieldValues[item.id] : item.value}
                             onChange={(e) => handleDataFieldValueChange(item.id, e.target.value)}
@@ -1563,20 +1413,24 @@ const DisasterDetailPage = () => {
                     })
                   }
                   emptyState={
-                    <div className="text-center py-8 bg-gray-50 rounded-md">
-                      <AlertTriangle className="h-10 w-10 text-gray-400 mx-auto mb-3" />
-                      <p className="text-gray-500 mb-2">Không có số liệu thiệt hại</p>
-                      <p className="text-sm text-gray-400 mb-4">Chưa có số liệu thiệt hại nào được thêm vào thảm họa này</p>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setActiveTab('damageData');
-                          setShowAddDataFieldDialog(true);
-                        }}
-                      >
-                        <Plus className="mr-2 h-4 w-4" /> Thêm số liệu thiệt hại
-                      </Button>
-                    </div>
+                    <TableRow>
+                      <TableCell colSpan={3} className="h-[300px]">
+                        <div className="text-center py-8 bg-gray-50 rounded-md">
+                          <AlertTriangle className="h-10 w-10 text-gray-400 mx-auto mb-3" />
+                          <p className="text-gray-500 mb-2">Không có số liệu thiệt hại</p>
+                          <p className="text-sm text-gray-400 mb-4">Chưa có số liệu thiệt hại nào được thêm vào thảm họa này</p>
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setActiveTab('damageData');
+                              setShowAddDataFieldDialog(true);
+                            }}
+                          >
+                            <Plus className="mr-2 h-4 w-4" /> Thêm số liệu thiệt hại
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
                   }
                 />
               )}
@@ -1686,18 +1540,22 @@ const DisasterDetailPage = () => {
                     endDate: rescueType.endDate || undefined
                   }))}
                   emptyState={
-                    <div className="text-center py-8 bg-gray-50 rounded-md">
-                      <Shield className="h-10 w-10 text-gray-400 mx-auto mb-3" />
-                      <p className="text-gray-500 mb-2">Không có thông tin cứu hộ</p>
-                      <p className="text-sm text-gray-400 mb-4">Thảm họa này chưa có thông tin cứu hộ nào được thêm vào</p>
-                      <Button
-                        variant="outline"
-                        className="bg-green-50 text-green-600 hover:bg-green-100 border-green-200"
-                        onClick={handleGotoRescuePage}
-                      >
-                        <Plus className="mr-2 h-4 w-4" /> Đi đến trang quản lý cứu hộ
-                      </Button>
-                    </div>
+                    <TableRow>
+                      <TableCell colSpan={6} className="h-[300px]">
+                        <div className="text-center py-8 bg-gray-50 rounded-md">
+                          <Shield className="h-10 w-10 text-gray-400 mx-auto mb-3" />
+                          <p className="text-gray-500 mb-2">Không có thông tin cứu hộ</p>
+                          <p className="text-sm text-gray-400 mb-4">Thảm họa này chưa có thông tin cứu hộ nào được thêm vào</p>
+                          <Button
+                            variant="outline"
+                            className="bg-green-50 text-green-600 hover:bg-green-100 border-green-200"
+                            onClick={handleGotoRescuePage}
+                          >
+                            <Plus className="mr-2 h-4 w-4" /> Đi đến trang quản lý cứu hộ
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
                   }
                 />
               )}
@@ -1741,8 +1599,8 @@ const DisasterDetailPage = () => {
                       header: "Thao tác",
                       cell: (item) => (
                         <div className="text-center">
-                          <Link 
-                            href={`/operation/zone/${item.id}`} 
+                          <Link
+                            href={`/operation/zone/${item.id}`}
                             className="text-blue-500 hover:text-blue-700 text-sm inline-flex items-center"
                           >
                             <Globe className="h-3.5 w-3.5 mr-1" /> Xem khu vực
@@ -1754,18 +1612,22 @@ const DisasterDetailPage = () => {
                   ]}
                   data={disaster.zone}
                   emptyState={
-                    <div className="text-center py-8 bg-gray-50 rounded-md">
-                      <Map className="h-10 w-10 text-gray-400 mx-auto mb-3" />
-                      <p className="text-gray-500 mb-2">Không có khu vực bị ảnh hưởng</p>
-                      <p className="text-sm text-gray-400 mb-4">Thảm họa này chưa có thông tin về khu vực hoặc vùng bị ảnh hưởng</p>
-                      <Button
-                        variant="outline"
-                        className="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border-indigo-200"
-                        onClick={() => router.push('/operation/zone')}
-                      >
-                        <Plus className="mr-2 h-4 w-4" /> Quản lý khu vực
-                      </Button>
-                    </div>
+                    <TableRow>
+                      <TableCell colSpan={3} className="p-0 items-center">
+                        <div className="text-center py-8 bg-gray-50 rounded-md">
+                          <Map className="h-10 w-10 text-gray-400 mx-auto mb-3" />
+                          <p className="text-gray-500 mb-2">Không có khu vực bị ảnh hưởng</p>
+                          <p className="text-sm text-gray-400 mb-4">Thảm họa này chưa có thông tin về khu vực hoặc vùng bị ảnh hưởng</p>
+                          <Button
+                            variant="outline"
+                            className="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border-indigo-200"
+                            onClick={() => router.push('/operation/zone')}
+                          >
+                            <Plus className="mr-2 h-4 w-4" /> Quản lý khu vực
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
                   }
                 />
               )}
@@ -1789,10 +1651,10 @@ const DisasterDetailPage = () => {
         <DialogContent className="sm:max-w-[500px] bg-white">
           <DialogHeader>
             <DialogTitle>
-              {activeTab === 'disasterData' 
-                ? 'Thêm số liệu thảm họa' 
-                : activeTab === 'damageData' 
-                  ? 'Thêm dữ liệu thiệt hại' 
+              {activeTab === 'disasterData'
+                ? 'Thêm số liệu thảm họa'
+                : activeTab === 'damageData'
+                  ? 'Thêm dữ liệu thiệt hại'
                   : 'Thêm trường dữ liệu'}
             </DialogTitle>
             <DialogDescription>
@@ -1837,17 +1699,17 @@ const DisasterDetailPage = () => {
                     onSelectNode={setSelectedDataField}
                     filterFunction={(node) => {
                       // Sử dụng state activeTab thay vì kiểm tra DOM
-                      
+
                       // Nếu đang ở tab "Số liệu thảm họa", chỉ hiển thị các trường có nhóm "disaster"
                       if (activeTab === 'disasterData') {
                         return node.dataFieldGroup?.toLowerCase() === 'disaster';
                       }
-                      
+
                       // Nếu đang ở tab "Thiệt hại từ thảm họa", chỉ hiển thị các trường có nhóm "common" 
                       if (activeTab === 'damageData') {
                         return node.dataFieldGroup?.toLowerCase() === 'common';
                       }
-                      
+
                       // Mặc định hiển thị tất cả
                       return true;
                     }}

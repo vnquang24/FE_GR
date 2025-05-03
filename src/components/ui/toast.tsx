@@ -39,7 +39,7 @@ export const Toast: React.FC<{
   return (
     <ToastifyContainer
       position={position}
-      autoClose={5000}
+      autoClose={1000}
       hideProgressBar={false}
       newestOnTop={true}
       closeOnClick={true}

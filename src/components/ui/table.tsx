@@ -180,10 +180,10 @@ const TableWrapper = ({
                     colSpan={tableHeadings.length || 1} 
                     className="text-center py-10"
                 >
-                    <div className="flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                    <span className="flex items-center justify-center">
+                        <span className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></span>
                         <span className="ml-2 text-gray-600">Đang tải dữ liệu...</span>
-                    </div>
+                    </span>
                 </TableCell>
             </TableRow>
         );

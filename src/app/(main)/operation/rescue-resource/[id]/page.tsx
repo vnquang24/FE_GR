@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import DateTimePickerWrapper from '@/components/wrapper/date-time-picker';
 import { toast } from '@/components/ui/toast';
 import HierarchicalSelect, { DataFieldNode } from '@/components/wrapper/hierarchical-select';
+import _ from 'lodash';
 
 // Định nghĩa type cho province
 type Province = {
@@ -30,14 +31,14 @@ type Province = {
 };
 
 // Định nghĩa type cho RescueResourceDisaster
-type RescueResourceDisaster = {
-  disasterId: string;
-  value: number;
-  unitId: string; 
-  startDate?: Date;
-  endDate?: Date;
-  source?: string;
-};
+// type RescueResourceDisaster = {
+//   disasterId: string;
+//   value: number;
+//   unitId: string;
+//   startDate?: Date;
+//   endDate?: Date;
+//   source?: string;
+// };
 
 const RescueResourceDetailPage: React.FC = () => {
   const params = useParams();
@@ -48,7 +49,7 @@ const RescueResourceDetailPage: React.FC = () => {
   const operationNowPage = useStoreState(state => state.appState.operationNowPage);
   const setOperationNowPage = useStoreActions(actions => actions.appState.setOperationNowPage);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  
+
   const ITEMS_PER_PAGE = 10;
   const [disasterStats, setDisasterStats] = useState({
     total: 0,
@@ -64,11 +65,13 @@ const RescueResourceDetailPage: React.FC = () => {
   const [openDisasterSelect, setOpenDisasterSelect] = useState(false);
   const [currentDisaster, setCurrentDisaster] = useState<string[]>([]);
   const [disasterValue, setDisasterValue] = useState<string>('');
-  const [disasterUnit, setDisasterUnit] = useState<string>('');
-  const [disasterSource, setDisasterSource] = useState<string>('');
+  const [disasterUnit, setDisasterUnit] = useState<{ id: string, name: string, unit?: string } | null>(null); const [disasterSource, setDisasterSource] = useState<string>('');
   const [disasterStartDate, setDisasterStartDate] = useState<Date | undefined>(undefined);
   const [disasterEndDate, setDisasterEndDate] = useState<Date | undefined>(undefined);
   const [isAddingDisaster, setIsAddingDisaster] = useState(false);
+  // State cho tìm kiếm
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const debouncedSearchText = _.debounce(setSearchQuery, 500);
 
   // Lấy thông tin chi tiết nguồn lực cứu hộ
   const { data: rescueType, isLoading: isLoadingRescueType, error: errorRescueType } = useFindUniqueRescueType({
@@ -110,11 +113,15 @@ const RescueResourceDetailPage: React.FC = () => {
       disaster: true
     }
   });
-
+  console.log('Search query : ', searchQuery);
   // Lấy danh sách thảm họa hiện có để thêm vào
   const { data: disasters, isLoading: isLoadingDisasterList } = useFindManyDisaster({
     where: {
-      deleted: null
+      deleted: null,
+      name: {
+        contains: searchQuery,
+        mode: 'insensitive'
+      }
     },
     orderBy: {
       createdAt: 'desc'
@@ -123,7 +130,7 @@ const RescueResourceDetailPage: React.FC = () => {
       disasterType: true
     }
   });
-  
+
   // Lấy danh sách data field để làm đơn vị
   const { data: dataFields, isLoading: isLoadingDataFields } = useFindManyDataField({
     where: {
@@ -145,19 +152,19 @@ const RescueResourceDetailPage: React.FC = () => {
       // Tạo Set để đảm bảo không đếm trùng thảm họa
       const uniqueDisasterIds = new Set();
       const now = new Date();
-      
+
       let active = 0;
       let completed = 0;
       let scheduled = 0;
       let notStarted = 0;
-      
+
       allRescueTypeOnDisasters.forEach(item => {
         if (!uniqueDisasterIds.has(item.disasterId)) {
           uniqueDisasterIds.add(item.disasterId);
-          
+
           const start = item.disaster.startDateTime ? new Date(item.disaster.startDateTime) : null;
           const end = item.disaster.endDateTime ? new Date(item.disaster.endDateTime) : null;
-          
+
           if (!start) {
             notStarted++;
           } else if (!end) {
@@ -169,7 +176,7 @@ const RescueResourceDetailPage: React.FC = () => {
           }
         }
       });
-      
+
       setDisasterStats({
         total: uniqueDisasterIds.size,
         active,
@@ -223,7 +230,7 @@ const RescueResourceDetailPage: React.FC = () => {
   const resetDisasterForm = () => {
     setCurrentDisaster([]);
     setDisasterValue('');
-    setDisasterUnit('');
+    setDisasterUnit(null);
     setDisasterSource('');
     setDisasterStartDate(undefined);
     setDisasterEndDate(undefined);
@@ -249,12 +256,12 @@ const RescueResourceDetailPage: React.FC = () => {
       setIsAddingDisaster(true);
 
       // Kiểm tra xem thảm họa đã tồn tại trong danh sách chưa
-      const existingDisasters = allRescueTypeOnDisasters?.filter(item => 
+      const existingDisasters = allRescueTypeOnDisasters?.filter(item =>
         currentDisaster.includes(item.disasterId)
       ) || [];
 
       if (existingDisasters.length > 0) {
-        const existingNames = existingDisasters.map(item => 
+        const existingNames = existingDisasters.map(item =>
           disasters?.find(d => d.id === item.disasterId)?.name || "Không xác định"
         ).join(", ");
 
@@ -267,7 +274,7 @@ const RescueResourceDetailPage: React.FC = () => {
       }
 
       // Thêm các thảm họa mới
-      const createPromises = currentDisaster.map(disasterId => 
+      const createPromises = currentDisaster.map(disasterId =>
         createRescueTypeOnDisasterMutation.mutateAsync({
           data: {
             disaster: {
@@ -277,7 +284,7 @@ const RescueResourceDetailPage: React.FC = () => {
               connect: { id: rescueTypeId }
             },
             unit: {
-              connect: { id: disasterUnit }
+              connect: { id: disasterUnit?.id || '' }
             },
             value: parseFloat(disasterValue) || 0,
             startDate: disasterStartDate,
@@ -286,18 +293,18 @@ const RescueResourceDetailPage: React.FC = () => {
           }
         })
       );
-      
+
       await Promise.all(createPromises);
-      
+
       // Refresh danh sách
       await refetchRescueTypeOnDisasters();
       await refetchAllRescueTypeOnDisasters();
-      
+
       toast.success({
         title: "Thành công",
         description: `Đã thêm ${currentDisaster.length} thảm họa vào danh sách`
       });
-      
+
       setIsAddingDisaster(false);
       closeAddDisasterDialog();
     } catch (error: any) {
@@ -340,8 +347,8 @@ const RescueResourceDetailPage: React.FC = () => {
         <AlertTriangle className="h-16 w-16 mb-4" />
         <div className="text-xl font-semibold">Đã xảy ra lỗi</div>
         <div className="mt-2">{(errorRescueType || errorDisasters)?.message}</div>
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           className="mt-6"
           onClick={handleBack}
         >
@@ -358,8 +365,8 @@ const RescueResourceDetailPage: React.FC = () => {
         <AlertTriangle className="h-16 w-16 mb-4" />
         <div className="text-xl font-semibold">Không tìm thấy nguồn lực cứu hộ</div>
         <div className="mt-2">Nguồn lực cứu hộ với ID này không tồn tại hoặc đã bị xóa.</div>
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           className="mt-6"
           onClick={handleBack}
         >
@@ -372,9 +379,9 @@ const RescueResourceDetailPage: React.FC = () => {
   return (
     <div className="w-full mx-auto p-2 sm:p-4">
       <div className="flex items-center mb-6">
-        <Button 
-          variant="ghost" 
-          size="sm" 
+        <Button
+          variant="ghost"
+          size="sm"
           className="mr-4"
           onClick={handleBack}
         >
@@ -403,7 +410,7 @@ const RescueResourceDetailPage: React.FC = () => {
                 </h3>
                 <p className="text-gray-700">{rescueType.description || 'Không có mô tả'}</p>
               </div>
-              
+
               <div className="pt-2">
                 <h3 className="text-sm font-medium text-gray-500 mb-2 flex items-center">
                   <Shield className="h-4 w-4 mr-1" /> Thông tin sử dụng
@@ -413,17 +420,17 @@ const RescueResourceDetailPage: React.FC = () => {
                     <p className="text-xs text-gray-500">Tổng số thảm họa:</p>
                     <p className="text-lg font-semibold text-blue-600">{disasterStats.total}</p>
                   </div>
-                  
+
                   <div>
                     <p className="text-xs text-gray-500">Đang diễn ra:</p>
                     <p className="text-md font-medium text-red-600">{disasterStats.active}</p>
                   </div>
-                  
+
                   <div>
                     <p className="text-xs text-gray-500">Đã kết thúc:</p>
                     <p className="text-md font-medium text-blue-600">{disasterStats.completed}</p>
                   </div>
-                  
+
                   <div>
                     <p className="text-xs text-gray-500">Sắp diễn ra:</p>
                     <p className="text-md font-medium text-yellow-600">{disasterStats.scheduled}</p>
@@ -461,7 +468,7 @@ const RescueResourceDetailPage: React.FC = () => {
                   <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
                     <div className="bg-red-500 h-2 rounded-full" style={{ width: `${disasterStats.total ? (disasterStats.active / disasterStats.total) * 100 : 0}%` }}></div>
                   </div>
-                  
+
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-xs text-gray-500">Đã kết thúc</span>
                     <span className="text-xs font-medium text-blue-600">{disasterStats.completed}</span>
@@ -469,7 +476,7 @@ const RescueResourceDetailPage: React.FC = () => {
                   <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
                     <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${disasterStats.total ? (disasterStats.completed / disasterStats.total) * 100 : 0}%` }}></div>
                   </div>
-                  
+
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-xs text-gray-500">Sắp diễn ra</span>
                     <span className="text-xs font-medium text-yellow-600">{disasterStats.scheduled}</span>
@@ -477,7 +484,7 @@ const RescueResourceDetailPage: React.FC = () => {
                   <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
                     <div className="bg-yellow-500 h-2 rounded-full" style={{ width: `${disasterStats.total ? (disasterStats.scheduled / disasterStats.total) * 100 : 0}%` }}></div>
                   </div>
-                  
+
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-xs text-gray-500">Chưa bắt đầu</span>
                     <span className="text-xs font-medium text-gray-600">{disasterStats.notStarted}</span>
@@ -498,7 +505,7 @@ const RescueResourceDetailPage: React.FC = () => {
             <CardTitle className="text-xl text-gray-800">
               Danh sách thảm họa sử dụng nguồn lực này
             </CardTitle>
-            <Button 
+            <Button
               variant="outline"
               className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
               onClick={openAddDisasterDialog}
@@ -529,7 +536,7 @@ const RescueResourceDetailPage: React.FC = () => {
                   header: "Tên thảm họa",
                   cell: (item) => (
                     <div className="flex flex-col">
-                      <button 
+                      <button
                         onClick={() => handleDisasterClick(item.disaster.id)}
                         className="text-left font-medium text-blue-600 hover:text-blue-800 hover:underline"
                       >
@@ -648,7 +655,7 @@ const RescueResourceDetailPage: React.FC = () => {
               Thêm thảm họa sử dụng nguồn lực cứu hộ "{rescueType?.name}"
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
             <div className="space-y-2">
               <Label htmlFor="disaster" className="text-sm font-medium text-gray-700">
@@ -672,9 +679,14 @@ const RescueResourceDetailPage: React.FC = () => {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-full p-0 bg-white">
+
                   <Command>
-                    <CommandInput placeholder="Tìm kiếm thảm họa..." className="h-9" />
-                    <CommandEmpty>Không tìm thấy thảm họa</CommandEmpty>
+                    <Input
+                      placeholder="Tìm kiếm thảm họa..."
+                      className="h-9"
+                      onChange={(e) => debouncedSearchText(e.target.value)}
+                    />
+                    {/* <CommandEmpty>Không tìm thấy thảm họa</CommandEmpty> */}
                     <CommandGroup>
                       <div className="h-60 overflow-y-auto">
                         {isLoadingDisasterList ? (
@@ -685,7 +697,7 @@ const RescueResourceDetailPage: React.FC = () => {
                           disasters.map((disaster) => {
                             const isSelected = currentDisaster.includes(disaster.id);
                             // Kiểm tra xem thảm họa đã có trong danh sách chưa
-                            const isExisting = allRescueTypeOnDisasters?.some(item => 
+                            const isExisting = allRescueTypeOnDisasters?.some(item =>
                               item.disasterId === disaster.id
                             );
                             return (
@@ -733,7 +745,7 @@ const RescueResourceDetailPage: React.FC = () => {
                 </PopoverContent>
               </Popover>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="value" className="text-sm font-medium text-gray-700">
                 Giá trị <span className="text-red-500">*</span>
@@ -747,14 +759,19 @@ const RescueResourceDetailPage: React.FC = () => {
                 className="w-full"
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="unit" className="text-sm font-medium text-gray-700">
                 Đơn vị <span className="text-red-500">*</span>
               </Label>
-              <Select value={disasterUnit} onValueChange={setDisasterUnit}>
+              <Select value={disasterUnit?.id || ''} onValueChange={id => {
+                const node = dataFields?.find(f => f.id === id);
+                if (node) setDisasterUnit({ id: node.id, name: node.name, unit: node.unit });
+              }}>
                 <SelectTrigger id="unit" className="w-full">
-                  <SelectValue placeholder="Chọn đơn vị" />
+                  <SelectValue placeholder="Chọn đơn vị">
+                    {disasterUnit ? `${disasterUnit.name}${disasterUnit.unit ? ` (${disasterUnit.unit})` : ''}` : 'Chọn đơn vị'}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="bg-white max-h-[300px] overflow-y-auto">
                   {isLoadingDataFields ? (
@@ -762,12 +779,14 @@ const RescueResourceDetailPage: React.FC = () => {
                       <Loader2 className="h-4 w-4 animate-spin mr-2" /> Đang tải...
                     </div>
                   ) : dataFields && dataFields.length > 0 ? (
-                    <HierarchicalSelect 
+                    <HierarchicalSelect
                       dataFields={convertToDataFieldNodes()}
                       emptyMessage="Không có đơn vị nào"
                       rootGroupLabel="Đơn vị cấp 1"
-                      onSelectNode={setDisasterUnit}
-                    />
+                      onSelectNode={(nodeId) => {
+                        const node = dataFields?.find(f => f.id === nodeId);
+                        if (node) setDisasterUnit({ id: node.id, name: node.name, unit: node.unit });
+                      }} />
                   ) : (
                     <div className="p-2 text-center text-gray-500">
                       Không có đơn vị nào
@@ -776,7 +795,7 @@ const RescueResourceDetailPage: React.FC = () => {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="source" className="text-sm font-medium text-gray-700">
                 Nguồn cung cấp
@@ -789,7 +808,7 @@ const RescueResourceDetailPage: React.FC = () => {
                 className="w-full"
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-700">
                 Thời gian bắt đầu
@@ -803,7 +822,7 @@ const RescueResourceDetailPage: React.FC = () => {
                 className="w-full"
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-700">
                 Thời gian kết thúc
@@ -824,13 +843,13 @@ const RescueResourceDetailPage: React.FC = () => {
               )}
             </div>
           </div>
-          
+
           <DialogFooter className="mt-6">
             <Button variant="outline" onClick={closeAddDisasterDialog} disabled={isAddingDisaster}>
               Hủy
             </Button>
-            <Button 
-              type="button" 
+            <Button
+              type="button"
               onClick={handleAddDisaster}
               disabled={isAddingDisaster}
               className="bg-blue-600 hover:bg-blue-700 text-white"
