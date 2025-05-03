@@ -33,7 +33,6 @@ import {
 import { 
   useFindManyPermission, 
 } from '@/generated/hooks/permission';
-import { motion } from 'framer-motion';
 import { PERMISSION_NAMES, PERMISSION_NAMES_VI, PERMISSION_TYPES_VI } from '@/constant';
 
 const RolePage: React.FC = () => {
@@ -175,23 +174,17 @@ const RolePage: React.FC = () => {
       />
       
       <div className="container mx-auto p-4">
-        <motion.h1 
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+        <h1 
           className="text-3xl font-bold mb-8 text-blue-800 relative pb-2 after:content-[''] after:absolute after:bottom-0 after:left-0 after:h-1 after:w-24 after:bg-blue-500"
         >
           Quản lý Vai trò Hệ thống
-        </motion.h1>
+        </h1>
         
-        <motion.div 
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
+        <div 
+          
           className="bg-white p-6 rounded-lg shadow-lg"
         >
-          <motion.div
-            variants={itemVariants}
+          <div
             className="flex justify-between items-center mb-6"
           >
             <h2 className="text-xl font-semibold text-blue-700">Danh sách vai trò</h2>
@@ -246,9 +239,9 @@ const RolePage: React.FC = () => {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-          </motion.div>
+          </div>
           
-          <motion.div variants={itemVariants}>
+          <div>
             <div className="rounded-lg border border-blue-100 overflow-hidden">
               <Table>
                 <TableCaption>Danh sách vai trò trong hệ thống</TableCaption>
@@ -319,8 +312,8 @@ const RolePage: React.FC = () => {
                 </TableBody>
               </Table>
             </div>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </div>
     </>
   );

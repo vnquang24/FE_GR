@@ -15,17 +15,11 @@ import { useToast, Toast } from '@/components/ui/toast';
 import { Switch } from '@/components/ui/switch';
 import { 
   useFindManyUserGroup, 
-  useCreateUserGroup, 
   useUpdateUserGroup, 
-  useDeleteUserGroup 
 } from '@/generated/hooks/user-group';
 import { 
   useFindManyPermission, 
-  useCreatePermission, 
-  useUpdatePermission, 
-  useDeletePermission 
 } from '@/generated/hooks/permission';
-import { motion } from 'framer-motion';
 import { PERMISSION_NAMES, PERMISSION_NAMES_VI, PERMISSION_TYPES_VI } from '@/constant';
 
 const PermissionPage: React.FC = () => {
@@ -125,34 +119,27 @@ const PermissionPage: React.FC = () => {
       />
       
       <div className="container mx-auto p-4">
-        <motion.h1 
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+        <h1 
+
           className="text-3xl font-bold mb-8 text-blue-800 relative pb-2 after:content-[''] after:absolute after:bottom-0 after:left-0 after:h-1 after:w-24 after:bg-blue-500"
         >
           Quản lý Phân quyền Hệ thống
-        </motion.h1>
+        </h1>
         
-        <motion.div 
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
+        <div 
+         
           className="bg-white p-6 rounded-lg shadow-lg"
         >
-          <motion.h2 
-            variants={itemVariants}
+          <h2 
             className="text-xl font-semibold mb-6 text-blue-700"
           >
             Phân quyền theo vai trò
-          </motion.h2>
+          </h2>
           
           {userGroups.map((group, groupIndex) => (
-            <motion.div 
-              key={group.id} 
-              variants={itemVariants}
+            <div 
+              key={group.id}
               className="mb-8 border border-blue-100 rounded-lg p-5 hover:shadow-md transition-shadow duration-300"
-              custom={groupIndex}
             >
               <h3 className="text-lg font-semibold mb-4 bg-gradient-to-r from-blue-50 to-blue-100 p-3 rounded-lg text-blue-700">
                 {group.name} 
@@ -202,9 +189,9 @@ const PermissionPage: React.FC = () => {
                   </TableBody>
                 </Table>
               </div>
-            </motion.div>
+            </div>
           ))}
-        </motion.div>
+        </div>
       </div>
     </>
   );
