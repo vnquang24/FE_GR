@@ -4,7 +4,9 @@ import Header from "@/components/panel/header";
 import Sidebar from "@/components/panel/side-bars";
 import { menuItems } from "@/lib/menu-data";
 import { usePathname } from "next/navigation";
-// import  {getUser}  from "@/utils/auth";
+import { getUserId } from "@/utils/auth";
+import { useFindUniqueUser } from "@/generated/hooks";
+import { useEffect, useState } from "react";
 
 export default function MainLayout({
   children,
@@ -12,7 +14,31 @@ export default function MainLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  // const user = getUser();
+  const [userData, setUserData] = useState({ name: "Đang tải...", icon: null });
+  
+  // Lấy userId từ access token
+  const userId = getUserId() || '';
+  if (!userId) {
+    return <div className="flex items-center justify-center h-screen">Đang tải...</div>;
+  }
+  // Fetch user data dựa vào userId từ access token
+  const { data: user } = useFindUniqueUser(
+    {
+      where: { id: userId },
+      select: { name: true, email: true, role: true }
+    },
+    {
+      // Chỉ gọi API khi userId có giá trị
+      enabled: !!userId
+    }
+  );
+
+  // Cập nhật userData khi user data được tải về
+  useEffect(() => {
+    if (user) {
+      setUserData({ name: user.name, icon: null });
+    }
+  }, [user]);
 
   // Function to find menu item label by pathname
   const findMenuLabel = (path: string): string => {
@@ -30,15 +56,12 @@ export default function MainLayout({
 
     return 'Trang chủ'; // Default fallback
   };
-  const user = {
-    name: "Admin",
-    icon: null,
-  };
+
   return (
     <div className="min-h-screen bg-slate-100 flex gap-4 pr-4">
       <Sidebar />
       <div className="flex-1 flex flex-col gap-4 pt-2 max-h-screen">
-        <Header pathName={findMenuLabel(pathname)} user={user} />
+        <Header pathName={findMenuLabel(pathname)} user={userData} />
         <main className="flex-1 overflow-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
           <div className="p-4 rounded-xl bg-white shadow-sm min-h-full">
             {children}

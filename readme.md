@@ -1,6 +1,6 @@
-# Pickelball Court Management Frontend
+# Disaster Management System Frontend
 
-Dự án frontend cho hệ thống quản lý sân Pickelball, được xây dựng bằng Next.js 15.
+Dự án frontend cho hệ thống Cứu hộ Cứu nạn (CHCN) quốc gia, được xây dựng bằng Next.js 15.
 
 ## Cài đặt
 
@@ -21,23 +21,39 @@ Mở http://localhost:3000 trên trình duyệt để xem kết quả.
 ```
 src/
 ├── app/               # Routes và layout
+│   ├── (main)/        # Trang chính sau khi đăng nhập
+│   ├── (manage)/      # Trang quản lý thiết bị, tài khoản
+│   └── auth/          # Trang đăng nhập/đăng ký
 ├── components/        # Các components có thể tái sử dụng
-│   ├── ui/           # UI components (buttons, inputs, etc.)
-│   └── providers/    # Context providers  
-├── lib/              # Utilities và configurations
-│   └── redux/        # Redux store setup
-└── utils/            # Helper functions
+│   ├── ui/            # UI components (buttons, inputs, etc.)
+│   ├── common/        # Common components cho các trang
+│   ├── panel/         # Layout components (Header, Footer, Sidebar)
+│   ├── wrapper/       # Higher-order components (MediaUploader, DatePicker)
+│   └── providers/     # Context providers  
+├── lib/               # Utilities và configurations
+│   ├── redux/         # Redux store setup
+│   ├── api/           # API configuration
+│   └── utils/         # Helper functions
+├── utils/             # Utility functions
+└── generated/         # Auto-generated API hooks và types
+    ├── api/           # OpenAPI generated code
+    └── hooks/         # ZenStack hooks
 ```
 
 ## Tech Stack
 
 | Công nghệ | Mô tả |
 |-----------|--------|
-| Next.js 15 | Framework |
-| Tailwind CSS | Styling |
+| Next.js 15 | Framework React với server-side rendering |
+| Tailwind CSS | Styling framework |
+| Tanstack Query | Data fetching và state management |
+| React Hook Form + Zod | Form handling và validation |
 | Redux/Easy-peasy | State Management |
-| React Hook Form + Zod | Form Handling |
-| React Big Calendar | Calendar |
+| Prisma | Type-safe database client |
+| ZenStack | API hooks generation |
+| Lucide React | Icon library |
+| Radix UI | Accessible component primitives |
+| date-fns | Date utility library |
 
 ## Scripts
 
@@ -47,18 +63,43 @@ src/
 | `npm run build` | Build production |
 | `npm run start` | Chạy production server |
 | `npm run lint` | Kiểm tra lỗi với ESLint |
+| `npm run generate` | Generate API hooks từ OpenAPI schema |
 
-## Tính năng
+## Tính năng chính
 
-- Đăng nhập/Đăng ký
-- Quản lý đặt sân
-- Xem lịch sử đặt sân
-- Quản lý profile người dùng
-- Xem thống kê
+- **Xác thực & Phân quyền**
+  - Đăng nhập/Đăng ký
+  - Quản lý thiết bị đăng nhập
+  - Phân quyền người dùng
+
+- **Quản lý Thảm họa**
+  - Theo dõi và quản lý thông tin thảm họa
+  - Phân loại mức độ khẩn cấp và ưu tiên
+  - Bản đồ định vị thảm họa
+  - Quản lý media liên quan (ảnh, tài liệu)
+
+- **Quản lý Nguồn lực Cứu hộ**
+  - Theo dõi các nguồn lực cứu hộ
+  - Phân bổ nguồn lực cho các thảm họa
+  - Báo cáo và thống kê
+
+- **Quản lý Dữ liệu**
+  - Quản lý đơn vị hành chính (tỉnh, huyện, xã)
+  - Quản lý các loại thảm họa
+  - Quản lý mức độ khẩn cấp và ưu tiên
+  - Quản lý trường dữ liệu
+
+## Architecture
+
+Hệ thống sử dụng kiến trúc client-server với:
+- Frontend: Next.js (application này)
+- Backend: NestJS REST API + Prisma ORM
+- Database: PostgreSQL
+- File storage: MinIO
 
 ## Contributing
 
-1. Clone project (`git clone https://github.com/vnquang24/KTPM-FE-ADMIN-MANAGER.git`)
+1. Clone project
 2. Tạo feature branch (`git checkout -b feature/AmazingFeature`)
 3. Add local repo (`git add .`)
 4. Commit changes theo format:
@@ -77,12 +118,14 @@ src/
 
    Ví dụ:
    ```bash
-   git commit -m "[create]: Add login page"
-   git commit -m "[fix]: Sửa lỗi validate form đăng ký"
-   git commit -m "[update]: Thêm loading state cho button"
+   git commit -m "[create]: Thêm trang chi tiết thảm họa"
+   git commit -m "[fix]: Sửa lỗi validate form"
+   git commit -m "[update]: Cải thiện hiệu suất bản đồ"
    ```
 5. Push to branch (`git push origin feature/AmazingFeature`)
 
-> ⚠️ **Cảnh báo:** Luôn luôn `git pull` trước khi code. Xử lý cẩn thận ```conflict```
+> ⚠️ **Cảnh báo:** Luôn luôn `git pull` trước khi code và xử lý cẩn thận các conflict
 
-> Khi cần ```merge``` vào ```main``` thì sẽ trao đổi
+## Liên hệ
+
+Nếu có câu hỏi hoặc góp ý, vui lòng liên hệ nhóm phát triển.
