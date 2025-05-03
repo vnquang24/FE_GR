@@ -6,14 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/toast';
-import { Image, File, X, Upload, Loader2, MapPin, Users } from 'lucide-react';
+import { Image, File as FileIcon, X, Upload, Loader2, MapPin, Users, Trash2, AlertTriangle, FilePlus, ImagePlus, Music4, VideoIcon } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { 
   useMinioControllerCreateUploadUrl, 
   useMinioControllerPresignedGetObject,
   fetchMinioControllerPresignedGetObject
 } from '@/generated/api/chcnComponents';
-import { useCreateMedia, useFindManyMedia } from '@/generated/hooks';
+import { useCreateMedia, useFindManyMedia, useDeleteMedia } from '@/generated/hooks';
 import { v4 as uuidv4 } from 'uuid';
 // Thêm import cho các types từ Prisma
 import type { Media, Coordinate, User, MediaType as PrismaMediaType } from '@prisma/client';
@@ -24,6 +24,14 @@ import { format } from 'date-fns';
 interface MediaWithRelations extends Media {
   coordinates?: Coordinate;
   user?: User;
+}
+
+// Định nghĩa interface mới cho thông tin file
+interface FileInfo {
+  file: File;
+  previewUrl: string;
+  mediaType: MediaType;
+  description: string;
 }
 
 interface MediaUploaderProps {
@@ -57,14 +65,39 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({
   const [isUncontrolledOpen, setIsUncontrolledOpen] = useState(false);
   const isOpen = isControlled ? isUploadDialogOpen : isUncontrolledOpen;
   
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [file, setFile] = useState<File | null>(null);
-  const [description, setDescription] = useState('');
-  const [mediaType, setMediaType] = useState<MediaType>('IMAGE');
+  // Thay thế state đơn lẻ bằng mảng các file
+  const [selectedFiles, setSelectedFiles] = useState<FileInfo[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{[key: string]: number}>({});
+  const [commonDescription, setCommonDescription] = useState('');
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [mediaViewUrls, setMediaViewUrls] = useState<{[key: string]: string}>({});
   const [mediaItems, setMediaItems] = useState<MediaWithRelations[]>(initialMedia);
+
+  // State for media deletion
+  const [mediaToDelete, setMediaToDelete] = useState<MediaWithRelations | null>(null);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Delete media mutation
+  const deleteMediaMutation = useDeleteMedia({
+    onSuccess: () => {
+      toast.success({
+        title: "Thành công",
+        description: "Đã xóa media thành công"
+      });
+      // Refresh media list
+      refetchMedia();
+      if (onSuccess) onSuccess();
+    },
+    onError: (error) => {
+      toast.error({
+        title: "Lỗi",
+        description: `Không thể xóa media: ${error.message}`
+      });
+    }
+  });
 
   // Thêm state cho coordinate
   const [customCoordinates, setCustomCoordinates] = useState({
@@ -166,38 +199,54 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({
     }
   }, [mediaItems]);
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = event.target.files?.[0];
-    if (!selectedFile) return;
+  // Hàm rút ngắn tên file dài
+  const shortenFileName = (fileName: string, maxLength: number = 25) => {
+    if (fileName.length <= maxLength) return fileName;
     
-    // Determine media type based on file MIME type
-    if (selectedFile.type.startsWith('image/')) {
-      setMediaType('IMAGE');
-    } else if (selectedFile.type.startsWith('video/')) {
-      setMediaType('VIDEO');
-    } else if (selectedFile.type.startsWith('audio/')) {
-      setMediaType('AUDIO');
-    } else {
-      toast.error({
-        title: "Lỗi định dạng file",
-        description: "Chỉ hỗ trợ file hình ảnh, video và âm thanh"
-      });
-      return;
-    }
+    const extension = fileName.split('.').pop() || '';
+    const nameWithoutExt = fileName.substring(0, fileName.length - extension.length - 1);
     
-    // Create a preview URL for the file
-    const objectUrl = URL.createObjectURL(selectedFile);
-    setPreviewUrl(objectUrl);
-    setFile(selectedFile);
+    if (nameWithoutExt.length <= maxLength - 6) return fileName;
     
-    return () => URL.revokeObjectURL(objectUrl);
+    const start = nameWithoutExt.substring(0, Math.floor((maxLength - 5) / 2));
+    const end = nameWithoutExt.substring(nameWithoutExt.length - Math.ceil((maxLength - 5) / 2));
+    
+    return `${start}...${end}.${extension}`;
   };
-  
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    const newFiles: FileInfo[] = Array.from(files).map((file) => {
+      let mediaType: MediaType = 'IMAGE';
+      if (file.type.startsWith('video/')) {
+        mediaType = 'VIDEO';
+      } else if (file.type.startsWith('audio/')) {
+        mediaType = 'AUDIO';
+      } else if (!file.type.startsWith('image/')) {
+        toast.error({
+          title: "Lỗi định dạng file",
+          description: "Chỉ hỗ trợ file hình ảnh, video và âm thanh"
+        });
+        return null;
+      }
+
+      const previewUrl = URL.createObjectURL(file);
+      return { file, previewUrl, mediaType, description: '' };
+    }).filter(Boolean) as FileInfo[];
+
+    setSelectedFiles((prev) => [...prev, ...newFiles]);
+
+    return () => {
+      newFiles.forEach((file) => URL.revokeObjectURL(file.previewUrl));
+    };
+  };
+
   const handleOpenDialog = () => {
     setIsUncontrolledOpen(true);
-    setPreviewUrl(null);
-    setFile(null);
-    setDescription('');
+    setSelectedFiles([]);
+    setCommonDescription('');
     // Reset custom coordinates
     setCustomCoordinates({
       lat: 0,
@@ -205,154 +254,161 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({
       useCustomCoordinates: false
     });
   };
-  
+
   const handleUpload = async () => {
-    if (!file) {
+    if (selectedFiles.length === 0) {
       toast.error({
         title: "Lỗi",
         description: "Vui lòng chọn file để tải lên"
       });
       return;
     }
-    
+
     try {
       setIsUploading(true);
-      
-      // Generate a unique filename using date format and UUID
-      const fileExtension = file.name.split('.').pop();
-      const today = format(new Date(), 'yyyy-MM-dd');
-      const uniqueFilename = `media/${today}/${uuidv4()}.${fileExtension}`;
-      console.log("Unique filename:", uniqueFilename);
-      // Get presigned URL for upload from MinIO service
-      const presignedUrlResponse = await minioUploadUrlMutation.mutateAsync({
-        body: {
-          path: uniqueFilename
+      let successCount = 0;
+
+      for (const fileInfo of selectedFiles) {
+        const { file, mediaType, description } = fileInfo;
+
+        // Generate a unique filename using date format and UUID
+        const fileExtension = file.name.split('.').pop();
+        const today = format(new Date(), 'yyyy-MM-dd');
+        const uniqueFilename = `media/${today}/${uuidv4()}.${fileExtension}`;
+        console.log("Unique filename:", uniqueFilename);
+
+        // Get presigned URL for upload from MinIO service
+        const presignedUrlResponse = await minioUploadUrlMutation.mutateAsync({
+          body: {
+            path: uniqueFilename
+          }
+        });
+
+        if (!presignedUrlResponse?.url) {
+          throw new Error("Không thể tạo URL tải lên");
         }
-      });
-      
-      if (!presignedUrlResponse?.url) {
-        throw new Error("Không thể tạo URL tải lên");
-      }
-      console.log("Full presigned URL response:", presignedUrlResponse);      // Upload file to MinIO using the presigned URL
-      const uploadResponse = await fetch(presignedUrlResponse.url, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': file.type,
-        },
-        body: file
-      });
-      
-      
-      if (!uploadResponse.ok) {
-        throw new Error(`Lỗi khi tải lên: ${uploadResponse.statusText}`);
-      }
-      
-      // Extract the base URL from the presigned URL (remove query params)
-    //  const fileUrl = presignedUrlResponse.url.split('?')[0];
-      
-      // Save media information to the database using createMedia hook
-      const createMediaData: {
-        data: {
-          url: string;
-          description: string;
-          mediaType: MediaType;
-          disaster: {
-            connect: { id: string };
-          };
-          user: {
-            connect: { id: string };
-          };
-          // Đảm bảo coordinates tuân thủ cấu trúc CoordinateCreateNestedOneWithoutMediaInput
-          coordinates?: {
-            connect?: { id: string };
-            create?: {
-              lat: number;
-              lng: number;
-              disaster: {
-                connect: { id: string };
+        console.log("Full presigned URL response:", presignedUrlResponse);
+
+        // Upload file to MinIO using the presigned URL
+        const uploadResponse = await fetch(presignedUrlResponse.url, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': file.type,
+          },
+          body: file
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error(`Lỗi khi tải lên: ${uploadResponse.statusText}`);
+        }
+
+        // Save media information to the database using createMedia hook
+        const createMediaData: {
+          data: {
+            url: string;
+            description: string;
+            mediaType: MediaType;
+            disaster: {
+              connect: { id: string };
+            };
+            user: {
+              connect: { id: string };
+            };
+            coordinates?: {
+              connect?: { id: string };
+              create?: {
+                lat: number;
+                lng: number;
+                disaster: {
+                  connect: { id: string };
+                };
               };
             };
-          };
-        },
-        include: {
-          coordinates: boolean;
-          user: boolean;
-        }
-      } = {
-        data: {
-          url: uniqueFilename,
-          description,
-          mediaType,
-          disaster: {
-            connect: { id: disasterId }
           },
-          user: {
-            connect: { id: userId }
+          include: {
+            coordinates: boolean;
+            user: boolean;
           }
-        },
-        include: {
-          coordinates: true,
-          user: true
-        }
-      };
-
-      // Sử dụng disasterCoordinateId mặc định hoặc custom coordinates nếu người dùng chọn
-      if (customCoordinates.useCustomCoordinates) {
-        // Tạo tọa độ mới từ thông tin người dùng nhập
-        createMediaData.data.coordinates = {
-          create: {
-            lat: customCoordinates.lat,
-            lng: customCoordinates.lng,
+        } = {
+          data: {
+            url: uniqueFilename,
+            description: description || commonDescription,
+            mediaType,
             disaster: {
               connect: { id: disasterId }
+            },
+            user: {
+              connect: { id: userId }
             }
+          },
+          include: {
+            coordinates: true,
+            user: true
           }
         };
-      } else if (disasterCoordinateId) {
-        // Sử dụng tọa độ thảm họa mặc định
-        createMediaData.data.coordinates = {
-          connect: { id: disasterCoordinateId }
-        };
+
+        // Sử dụng disasterCoordinateId mặc định hoặc custom coordinates nếu người dùng chọn
+        if (customCoordinates.useCustomCoordinates) {
+          createMediaData.data.coordinates = {
+            create: {
+              lat: customCoordinates.lat,
+              lng: customCoordinates.lng,
+              disaster: {
+                connect: { id: disasterId }
+              }
+            }
+          };
+        } else if (disasterCoordinateId) {
+          createMediaData.data.coordinates = {
+            connect: { id: disasterCoordinateId }
+          };
+        }
+
+        try {
+          // Gọi mutation để tạo media
+          const createdMedia = await createMediaMutation.mutateAsync(createMediaData as any);
+
+          // Get a presigned URL for the new media
+          if (createdMedia) {
+            const viewUrl = await getMediaViewUrl(uniqueFilename);
+            setMediaViewUrls(prev => ({
+              ...prev,
+              [createdMedia.id]: viewUrl
+            }));
+            
+            successCount++;
+          }
+        } catch (mediaError) {
+          console.error("Error creating media record:", mediaError);
+          // Continue with other files even if one fails
+        }
       }
-      
-      // Gọi mutation để tạo media
-      const createdMedia = await createMediaMutation.mutateAsync(createMediaData as any); // Sử dụng type assertion tạm thời
-      
+
+      // Refresh media gallery if we successfully uploaded any files
+      if (successCount > 0 && showGallery) {
+        refetchMedia();
+      }
+
       toast.success({
-        title: "Thành công",
-        description: "Đã tải lên thành công"
+        title: "Tải lên thành công",
+        description: `Đã tải lên ${successCount} / ${selectedFiles.length} file`
       });
-      
+
       // Close dialog and reset state - Fix: handle both controlled and uncontrolled state
       if (isControlled) {
         onUploadDialogOpenChange?.(false);
       } else {
         setIsUncontrolledOpen(false);
       }
-      
-      setFile(null);
-      setPreviewUrl(null);
-      setDescription('');
+
+      setSelectedFiles([]);
+      setCommonDescription('');
       setCustomCoordinates({
         lat: 0,
         lng: 0,
         useCustomCoordinates: false
       });
-      // Add the new media to the list if it's returned
-      if (createdMedia) {
-        // Get a presigned URL for the new media
-        const viewUrl = await getMediaViewUrl(uniqueFilename);
-        setMediaViewUrls(prev => ({
-          ...prev,
-          [createdMedia.id]: viewUrl
-        }));
 
-        if (showGallery) {
-          refetchMedia();
-        }
-        
-      }
-      
       // Call onSuccess callback if provided
       if (onSuccess) {
         onSuccess();
@@ -367,13 +423,14 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({
       setIsUploading(false);
     }
   };
-  
-  const handleClearFile = () => {
-    setFile(null);
-    setPreviewUrl(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+
+  const handleClearFile = (index: number) => {
+    setSelectedFiles((prev) => {
+      const updatedFiles = [...prev];
+      const [removedFile] = updatedFiles.splice(index, 1);
+      URL.revokeObjectURL(removedFile.previewUrl);
+      return updatedFiles;
+    });
   };
 
   // Render the media gallery
@@ -462,6 +519,17 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({
                   </div>
                 )
               )}
+              
+              {/* Add delete button overlay in top right corner */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-1 right-1 h-7 w-7 rounded-full bg-black/40 text-white hover:bg-black/60"
+                onClick={() => handleDeleteRequest(item)}
+                title="Xóa media"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
             </div>
             <div className="p-3">
               <div className="flex justify-between items-center mb-1">
@@ -472,16 +540,22 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({
                   {new Date(item.createdAt).toLocaleDateString('vi-VN')}
                 </div>
               </div>
-              <p className="text-sm line-clamp-2">{item.description || "Không có mô tả"}</p>
+              <p className="text-sm line-clamp-2 break-words" title={item.description || "Không có mô tả"}>
+                {item.description || "Không có mô tả"}
+              </p>
               <div className="mt-2 text-xs text-gray-500">
                 <div className="flex items-center">
-                  <Users className="h-3 w-3 mr-1" />
-                  <span className="truncate">{item.user?.name || "Không xác định"}</span>
+                  <Users className="h-3 w-3 mr-1 flex-shrink-0" />
+                  <span className="truncate" title={item.user?.name || "Không xác định"}>
+                    {item.user?.name || "Không xác định"}
+                  </span>
                 </div>
                 {item.coordinates && (
                   <div className="flex items-center mt-1">
-                    <MapPin className="h-3 w-3 mr-1" />
-                    <span className="truncate">{item.coordinates.address || `${item.coordinates.lat.toFixed(6)}, ${item.coordinates.lng.toFixed(6)}`}</span>
+                    <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
+                    <span className="truncate" title={item.coordinates.address || `${item.coordinates.lat.toFixed(6)}, ${item.coordinates.lng.toFixed(6)}`}>
+                      {item.coordinates.address || `${item.coordinates.lat.toFixed(6)}, ${item.coordinates.lng.toFixed(6)}`}
+                    </span>
                   </div>
                 )}
               </div>
@@ -504,6 +578,41 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({
     }
   };
 
+  // Handle opening delete confirmation dialog
+  const handleDeleteRequest = (media: MediaWithRelations) => {
+    setMediaToDelete(media);
+    setShowDeleteConfirmation(true);
+  };
+
+  // Handle delete media confirmation
+  const handleDeleteMedia = async () => {
+    if (!mediaToDelete) return;
+
+    try {
+      setIsDeleting(true);
+      
+      // Mark the media as deleted (soft delete by setting deleted timestamp)
+      await deleteMediaMutation.mutateAsync({
+        where: { id: mediaToDelete.id },
+      });
+
+      // Close the confirmation dialog
+      setShowDeleteConfirmation(false);
+      setMediaToDelete(null);
+      
+    } catch (error) {
+      console.error("Error deleting media:", error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Handle closing the confirmation dialog
+  const handleCancelDelete = () => {
+    setShowDeleteConfirmation(false);
+    setMediaToDelete(null);
+  };
+
   return (
     <>
       {showUploadButton && (
@@ -522,77 +631,112 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({
           <DialogHeader>
             <DialogTitle>Tải lên hình ảnh hoặc media</DialogTitle>
             <DialogDescription>
-              Tải lên hình ảnh, video, hoặc âm thanh liên quan đến thảm họa.
+              Tải lên hình ảnh, video, hoặc âm thanh liên quan đến thảm họa. Bạn có thể chọn nhiều file cùng lúc.
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="file">File</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="file"
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileSelect}
-                  accept="image/*,video/*,audio/*"
-                  className="bg-white flex-1"
-                />
-                {previewUrl && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9"
-                    onClick={handleClearFile}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="file">Chọn file</Label>
+                {selectedFiles.length > 0 && (
+                  <span className="text-xs text-blue-600 font-medium">
+                    Đã chọn {selectedFiles.length} file
+                  </span>
                 )}
+              </div>
+              <div className="flex flex-col gap-2">
+                <Card className="overflow-hidden p-2 bg-gray-50 border-dashed">
+                  <div className="flex flex-col items-center justify-center py-4">
+                    <FilePlus className="h-8 w-8 text-gray-400 mb-2" />
+                    <p className="text-sm text-gray-700 mb-1">Kéo và thả file vào đây hoặc</p>
+                    <Label
+                      htmlFor="file"
+                      className="cursor-pointer bg-blue-500 hover:bg-blue-600 text-white px-4 py-1.5 text-xs rounded-md font-medium"
+                    >
+                      Chọn file
+                    </Label>
+                    <Input
+                      id="file"
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileSelect}
+                      accept="image/*,video/*,audio/*"
+                      multiple
+                      className="sr-only"
+                    />
+                    <p className="text-xs text-gray-500 mt-2">Hỗ trợ: JPG, PNG, GIF, MP4, MP3,...</p>
+                  </div>
+                </Card>
               </div>
             </div>
             
-            {previewUrl && file && (
-              <Card className="overflow-hidden p-2">
-                {mediaType === 'IMAGE' && (
-                  <div className="aspect-video bg-gray-100 flex items-center justify-center overflow-hidden">
-                    <img 
-                      src={previewUrl} 
-                      alt="Preview" 
-                      className="max-h-full max-w-full object-contain"
-                    />
-                  </div>
-                )}
-                {mediaType === 'VIDEO' && (
-                  <div className="aspect-video bg-gray-100 flex items-center justify-center">
-                    <video 
-                      src={previewUrl}
-                      controls
-                      className="max-h-full max-w-full"
-                    ></video>
-                  </div>
-                )}
-                {mediaType === 'AUDIO' && (
-                  <div className="p-4 bg-gray-100 flex items-center justify-center">
-                    <audio 
-                      src={previewUrl}
-                      controls
-                      className="w-full"
-                    ></audio>
-                  </div>
-                )}
-                <div className="text-xs text-gray-500 mt-2">
-                  {file.name} ({(file.size / 1024).toFixed(2)} KB)
+            {selectedFiles.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium">File đã chọn</h3>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setSelectedFiles([])}
+                    className="h-8 text-xs text-red-500 hover:text-red-600"
+                  >
+                    Xóa tất cả
+                  </Button>
                 </div>
-              </Card>
+                <div className="max-h-[200px] overflow-y-auto space-y-2 pr-1">
+                  {selectedFiles.map((fileInfo, index) => (
+                    <Card key={index} className="overflow-hidden">
+                      <div className="flex items-center p-2">
+                        <div className="h-12 w-12 mr-3 bg-gray-100 rounded flex-shrink-0 flex items-center justify-center overflow-hidden">
+                          {fileInfo.mediaType === 'IMAGE' && (
+                            <img 
+                              src={fileInfo.previewUrl} 
+                              alt="Preview" 
+                              className="h-full w-full object-cover"
+                            />
+                          )}
+                          {fileInfo.mediaType === 'VIDEO' && (
+                            <VideoIcon className="h-6 w-6 text-gray-500" />
+                          )}
+                          {fileInfo.mediaType === 'AUDIO' && (
+                            <Music4 className="h-6 w-6 text-gray-500" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0 mr-2 overflow-hidden">
+                          <div 
+                            className="text-sm font-medium text-gray-900 truncate w-full" 
+                            title={fileInfo.file.name}
+                            style={{ maxWidth: 'calc(100% - 10px)' }}
+                          >
+                            {shortenFileName(fileInfo.file.name)}
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            {(fileInfo.file.size / (1024 * 1024)).toFixed(2)} MB
+                          </p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 flex-shrink-0 ml-auto"
+                          onClick={() => handleClearFile(index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
             )}
             
             <div className="space-y-2">
-              <Label htmlFor="description">Mô tả</Label>
+              <Label htmlFor="description">Mô tả chung</Label>
               <Textarea
                 id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Nhập mô tả cho file media này"
+                value={commonDescription}
+                onChange={(e) => setCommonDescription(e.target.value)}
+                placeholder="Nhập mô tả chung cho các file media này"
                 className="bg-white"
               />
             </div>
@@ -655,6 +799,7 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({
                   </div>
                 ) : (
                   <p className="text-sm text-yellow-600 italic">
+                    <AlertTriangle className="h-4 w-4 inline mr-1" />
                     Media này sẽ không có thông tin vị trí
                   </p>
                 )}
@@ -663,23 +808,20 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({
           </div>
           
           <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => setIsUncontrolledOpen(false)}>
-              Hủy
-            </Button>
             <Button
               onClick={handleUpload}
-              disabled={!file || isUploading}
+              disabled={selectedFiles.length === 0 || isUploading}
               className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               {isUploading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Đang tải lên...
+                  Đang tải {selectedFiles.length > 1 ? `${selectedFiles.length} file` : 'file'} lên...
                 </>
               ) : (
                 <>
                   <Upload className="h-4 w-4 mr-2" />
-                  Tải lên
+                  Tải {selectedFiles.length > 0 ? `${selectedFiles.length} file` : 'file'} lên
                 </>
               )}
             </Button>
@@ -694,6 +836,72 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({
           </CardContent>
         </div>
       )}
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={showDeleteConfirmation} onOpenChange={setShowDeleteConfirmation}>
+        <DialogContent className="sm:max-w-md bg-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center text-red-600">
+              <AlertTriangle className="h-5 w-5 mr-2" />
+              Xác nhận xóa
+            </DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn xóa {mediaToDelete?.mediaType === 'IMAGE' ? 'hình ảnh' : mediaToDelete?.mediaType === 'VIDEO' ? 'video' : 'âm thanh'} này không?
+              Thao tác này không thể hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {mediaToDelete && mediaToDelete.mediaType === 'IMAGE' && mediaViewUrls[mediaToDelete.id] && (
+            <div className="p-2 bg-gray-100 rounded-md my-4 flex justify-center">
+              <img 
+                src={mediaViewUrls[mediaToDelete.id]} 
+                alt="Media to delete" 
+                className="max-h-40 object-contain"
+                onError={(e) => {
+                  e.currentTarget.src = 'https://placehold.co/400x300?text=Không+thể+tải+ảnh';
+                }}
+              />
+            </div>
+          )}
+          
+          <div className="pt-4 pb-2">
+            <p className="text-sm text-gray-600 mb-1">
+              <strong>Mô tả:</strong> {mediaToDelete?.description || "Không có mô tả"}
+            </p>
+            <p className="text-sm text-gray-600">
+              <strong>Ngày tạo:</strong> {mediaToDelete ? new Date(mediaToDelete.createdAt).toLocaleDateString('vi-VN') : ""}
+            </p>
+          </div>
+          
+          <DialogFooter className="mt-4">
+            <Button
+              variant="outline"
+              onClick={handleCancelDelete}
+              disabled={isDeleting}
+            >
+              Hủy
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteMedia}
+              disabled={isDeleting}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Đang xóa...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Xóa
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
