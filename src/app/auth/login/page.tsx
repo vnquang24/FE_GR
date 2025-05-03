@@ -45,7 +45,7 @@ const LoginPage: React.FC = () => {
 
   const onSubmit = async (data: LoginFormType) => {
     if (await login(data.email, data.password)) {
-      router.push('/home');
+      router.push('/statistical/disaster');
       router.refresh(); // Refresh để đảm bảo middleware được chạy lại
     } else {
       alert('Sai email hoặc mật khẩu');

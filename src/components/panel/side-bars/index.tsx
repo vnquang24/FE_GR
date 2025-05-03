@@ -14,7 +14,7 @@ const Sidebar: React.FC = () => {
     <div className={`${isShowSidebar ? 'w-16' : 'w-64'} h-screen bg-white transition-all duration-300 relative flex flex-col`}>
       {/* Logo và tiêu đề - không cuộn */}
       <Link 
-        href="/home" 
+        href="/statistical/disaster" 
         className={`flex items-center ${
           isShowSidebar ? 'justify-center' : 'gap-3'
         } mb-4 px-6 pb-3 pt-7 flex-shrink-0`}

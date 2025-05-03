@@ -37,7 +37,7 @@ const registerPage: React.FC = () => {
 
     const onSubmit = async (data: registerFormType) => {
         if (await authRegister(data.email, data.password, data.phone, data.name)){
-            router.push('/home');
+            router.push('/statistical/disaster');
             router.refresh();
         } else {
             alert('Đăng kí thất bại');

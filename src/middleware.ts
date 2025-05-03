@@ -19,7 +19,7 @@ export function middleware(request: NextRequest) {
     // Kiểm tra token nếu người dùng đã đăng nhập và đang truy cập trang auth
     const accessToken = request.cookies.get('accessToken')?.value
     if (accessToken) {
-      return NextResponse.redirect(new URL('/home', request.url))
+      return NextResponse.redirect(new URL('/statistical/disaster', request.url))
     }
     return NextResponse.next()
   }
