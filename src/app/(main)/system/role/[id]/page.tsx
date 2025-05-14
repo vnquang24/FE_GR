@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, ChangeEvent, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
-import { PermissionName, PermissionType, UserRole } from '@prisma/client';
+import { PermissionType, UserRole } from '@prisma/client';
 import { ArrowLeft, User, Clock, Calendar, Edit, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -35,6 +35,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from '@/components/ui/toast';
 
+// Định nghĩa interface cho đối tượng User để tránh sử dụng kiểu any
+interface UserType {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  phone?: string | null; // Cập nhật để có thể nhận giá trị null
+  locked?: boolean;
+  group: Array<{ id: string; name: string }>;
+  // Thêm các trường khác nếu cần
+}
 
 const RoleDetailPage: React.FC = () => {
   const params = useParams();
@@ -49,7 +60,7 @@ const RoleDetailPage: React.FC = () => {
   });
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedUsers, setSelectedUsers] = useState<any[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<UserType[]>([]);
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
 
@@ -87,12 +98,6 @@ const RoleDetailPage: React.FC = () => {
   const linkedUsers = React.useMemo(() => {
     if (!group) return [];
     return allUsers.filter(user => user.group.some(g => g.id === groupId));
-  }, [group, allUsers, groupId]);
-
-  // Tìm những người dùng chưa thuộc vai trò này
-  const unlinkedUsers = React.useMemo(() => {
-    if (!group) return [];
-    return allUsers.filter(user => !user.group.some(g => g.id === groupId));
   }, [group, allUsers, groupId]);
 
   // Lấy danh sách người dùng với khả năng tìm kiếm
@@ -229,7 +234,7 @@ const RoleDetailPage: React.FC = () => {
   };
 
   // Xử lý chọn/bỏ chọn người dùng
-  const toggleSelectUser = (user: any) => {
+  const toggleSelectUser = (user: UserType) => {
     setSelectedUsers(prev => {
       const isSelected = prev.some(u => u.id === user.id);
       if (isSelected) {
@@ -442,37 +447,6 @@ const RoleDetailPage: React.FC = () => {
       default:
         return null;
     }
-  };
-
-  // Render nút chỉnh sửa phù hợp với tab đang hiển thị
-  const renderEditButton = () => {
-    let buttonText = 'Chỉnh sửa';
-    let buttonMode: 'info' | 'permissions' | 'users' = 'info';
-    
-    switch (activeTab) {
-      case 'basic-info':
-        buttonText = 'Chỉnh sửa thông tin';
-        buttonMode = 'info';
-        break;
-      case 'permissions':
-        buttonText = 'Quản lý phân quyền';
-        buttonMode = 'permissions';
-        break;
-      case 'users':
-        buttonText = 'Quản lý tài khoản';
-        buttonMode = 'users';
-        break;
-    }
-    
-    return (
-      <Button
-        onClick={() => openEditDialog(buttonMode)}
-        className="bg-orange-600 hover:bg-orange-700 text-white font-medium transition-colors duration-300 hover:shadow-lg"
-      >
-        <Edit className="h-4 w-4 mr-2" />
-        {buttonText}
-      </Button>
-    );
   };
 
   if (isLoading || isLoadingUsers) {
@@ -973,4 +947,4 @@ const RoleDetailPage: React.FC = () => {
   );
 };
 
-export default RoleDetailPage; 
+export default RoleDetailPage;

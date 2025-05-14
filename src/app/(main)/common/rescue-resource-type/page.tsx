@@ -15,14 +15,14 @@ import { toast } from '@/components/ui/toast';
 import DialogCreateUpdateRescueResourceType from '@/components/common/dialog-create-update-rescue-resource-type';
 import { z } from 'zod';
 
-export const rescueTypeSchema = z.object({
+const rescueTypeSchema = z.object({
   id: z.string(),
   name: z.string().min(1, { message: 'Tên phương thức cứu hộ không được để trống' }),
   description: z.string().optional(),
   unit: z.string().optional(),
 });
 
-export type RescueTypeFormValues = z.infer<typeof rescueTypeSchema>;
+type RescueTypeFormValues = z.infer<typeof rescueTypeSchema>;
 
 const RescueResourceTypePage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');

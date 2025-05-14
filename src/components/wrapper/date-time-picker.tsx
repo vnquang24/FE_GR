@@ -20,7 +20,6 @@ import {
     ChevronDown
 } from 'lucide-react'
 import React, { useCallback, useEffect } from 'react'
-import SelectWrapper from './select'    
 dayjs.extend(LocalizedFormat)
 dayjs.extend(quarterOfYear)
 dayjs.locale('vi')
@@ -643,13 +642,13 @@ const DateTimePickerWrapper = ({
                             }}
                         >
                             {Array.from(
-                                { length: 20 },
+                                { length: 70 },
                                 (_, i) => (
                                     <option
                                         key={i}
-                                        value={i + month.getFullYear() - 10}
+                                        value={i + month.getFullYear() - 50}
                                     >
-                                        năm {i + month.getFullYear() - 10}
+                                        năm {i + month.getFullYear() - 50}
                                     </option>
                                 )
                             )}

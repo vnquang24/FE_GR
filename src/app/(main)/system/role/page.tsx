@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, ChangeEvent, useCallback } from 'react';
+import React, { useState, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { PlusCircle, Trash2, Eye, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -33,7 +33,6 @@ import {
 import { 
   useFindManyPermission, 
 } from '@/generated/hooks/permission';
-import { PERMISSION_NAMES, PERMISSION_NAMES_VI, PERMISSION_TYPES_VI } from '@/constant';
 
 const RolePage: React.FC = () => {
   const router = useRouter();
@@ -51,7 +50,7 @@ const RolePage: React.FC = () => {
     }
   });
 
-  const { data: permissions = [], isLoading: isLoadingPermissions } = useFindManyPermission();
+  const { isLoading: isLoadingPermissions } = useFindManyPermission();
   
   // Mutation hooks
   const createUserGroupMutation = useCreateUserGroup();
@@ -135,29 +134,6 @@ const RolePage: React.FC = () => {
     );
   }
 
-  // Animation variants cho Framer Motion
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { 
-      opacity: 1,
-      transition: { 
-        when: "beforeChildren",
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { 
-      y: 0, 
-      opacity: 1,
-      transition: {
-        type: "spring",
-        stiffness: 100
-      }
-    }
-  };
 
   return (
     <>

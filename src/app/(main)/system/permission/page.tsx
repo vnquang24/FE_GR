@@ -1,7 +1,6 @@
 'use client';
-import React, { useState, ChangeEvent, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { PermissionName, PermissionType } from '@prisma/client';
+import React, { useCallback } from 'react';
+import { PermissionType } from '@prisma/client';
 import { 
   Table, 
   TableBody, 
@@ -80,30 +79,6 @@ const PermissionPage: React.FC = () => {
     );
   }
 
-  // Animation variants cho Framer Motion
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { 
-      opacity: 1,
-      transition: { 
-        when: "beforeChildren",
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { 
-      y: 0, 
-      opacity: 1,
-      transition: {
-        type: "spring",
-        stiffness: 100
-      }
-    }
-  };
-
   return (
     <>
       {/* Thêm Toast Container ở góc phải phía trên */}
@@ -136,7 +111,7 @@ const PermissionPage: React.FC = () => {
             Phân quyền theo vai trò
           </h2>
           
-          {userGroups.map((group, groupIndex) => (
+          {userGroups.map((group) => (
             <div 
               key={group.id}
               className="mb-8 border border-blue-100 rounded-lg p-5 hover:shadow-md transition-shadow duration-300"

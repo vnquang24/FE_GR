@@ -1,40 +1,42 @@
 "use client"
-import React, { useMemo, useState, useRef, useCallback } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import { useFindManyDataField, useDeleteDataField } from "@/generated/hooks";
 import {
     Loader2,
     Plus,
     Edit,
     Trash2,
-    HardDriveUpload,
     ChevronRight,
     ChevronDown,
     Search,
     AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {
-    Table,
     TableBody,
     TableCell,
-    TableHead,
-    TableHeader,
     TableRow,
     TableWrapper
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription, DialogWrapper, DialogClose } from '@/components/ui/dialog';
+import { DialogWrapper, DialogClose } from '@/components/ui/dialog';
 import { toast } from "@/components/ui/toast";
-import DialogCreateUpdateDataField, { DataFieldFormValues } from "@/components/common/dialog-create-update-data-filed";
+import DialogCreateUpdateDataField from "@/components/common/dialog-create-update-data-filed";
 import _ from 'lodash';
+import { z } from "zod";
+
+const dataFieldSchema = z.object({
+    id: z.string().optional(),
+    name: z.string().min(1, { message: 'Tên trường dữ liệu không được để trống' }),
+    description: z.string().optional().nullable(),
+    unit: z.string().optional().nullable(),
+    code: z.string().optional().nullable(),
+    parentId: z.string().optional(),
+    dataFieldGroup: z.string().default("common")
+  });
+  
+type DataFieldFormValues = z.infer<typeof dataFieldSchema>;
 
 type DataField = {
     id: string;
@@ -122,28 +124,6 @@ const NestedTable: React.FC<{
     return (
         <TableWrapper
             headings={["SL", "Tên", "Mã", "Đơn vị", "Thao tác"]}
-            // columns={[
-            //     {
-            //         header: "SL",
-            //         className: "w-16 text-center"
-            //     },
-            //     {
-            //         header: "Tên",
-            //         className: "w-2/5 font-semibold"
-            //     },
-            //     {
-            //         header: "Mã",
-            //         className: "w-1/4 font-semibold"
-            //     },
-            //     {
-            //         header: "Đơn vị",
-            //         className: "w-20 font-semibold"
-            //     },
-            //     {
-            //         header: "Thao tác",
-            //         className: "w-32 text-center"
-            //     }
-            // ]}
             variant="striped"
         >
             <TableBody>

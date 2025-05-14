@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { PanelsTopLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import MenuItemComponent from '../menu-item';

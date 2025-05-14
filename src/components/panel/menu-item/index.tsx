@@ -5,7 +5,7 @@ import { ChevronUp, ChevronDown } from 'lucide-react';
 import { MenuItemProps } from './type';
 import clsx from 'clsx';
 import { useStoreState } from '@/lib/redux/hook';
-import { HoverCard, HoverCardContent, HoverCardTrigger, HoverCardArrow } from '@/components/ui/hover-card';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 
 const MenuItemComponent: React.FC<MenuItemProps> = ({ item, depth }) => {
   const [isOpen, setIsOpen] = useState(false);

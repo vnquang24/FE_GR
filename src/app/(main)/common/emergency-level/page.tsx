@@ -1,10 +1,6 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState} from 'react';
 import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableHead,
   TableRow,
   TableCell,
   TableWrapper
@@ -12,8 +8,8 @@ import {
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Edit, Trash2, AlertTriangle, Save, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useFindManyEmergencyLevel, useCreateEmergencyLevel, useUpdateEmergencyLevel, useDeleteEmergencyLevel } from '@/generated/hooks';
+import { Plus, Search, Edit, Trash2, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useFindManyEmergencyLevel, useDeleteEmergencyLevel } from '@/generated/hooks';
 import { 
   Dialog, 
   DialogContent, 
@@ -22,12 +18,9 @@ import {
   DialogFooter,
   DialogDescription
 } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/toast';
 import _ from 'lodash';
 import { z } from 'zod';
-import DialogCreateUpdatePriorityLevel from '@/components/common/dialog-create-update-priority-level';
 import DialogCreateUpdateEmergencyLevel from '@/components/common/dialog-create-update-emergency-level';
 
 // Định nghĩa schema validation sử dụng Zod
@@ -38,8 +31,7 @@ const emergencyLevelFormSchema = z.object({
 });
 
 // Định nghĩa kiểu dữ liệu từ schema Zod
-export type EmergencyLevelFormData = z.infer<typeof emergencyLevelFormSchema>;
-export { emergencyLevelFormSchema };
+type EmergencyLevelFormData = z.infer<typeof emergencyLevelFormSchema>;
 
 const EmergencyLevelPage: React.FC = () => {
   const [searchText, setSearchText] = useState<string>('')

@@ -20,7 +20,6 @@ import {
 } from '@/components/ui/popover'
 import { Separator } from '@/components/ui/separator'
 import { cn, stringToSlug } from '@/lib/utils'
-import { List, AutoSizer } from 'react-virtualized'
 
 /**
  * Variants for the multi-select component to handle different styles.
@@ -32,12 +31,13 @@ const multiSelectVariants = cva(
         variants: {
             variant: {
                 default:
-                    'border-foreground/10 text-foreground bg-card hover:bg-card/80',
+                    'bg-white border-foreground/10 text-foreground bg-card hover:bg-card/80',
                 secondary:
-                    'border-foreground/10 bg-secondary text-secondary-foreground hover:bg-secondary/80',
+                    'bg-white border-foreground/10 bg-secondary text-secondary-foreground hover:bg-secondary/80',
                 destructive:
-                    'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
+                    'bg-white border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
                 inverted: 'inverted',
+                outline: 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50',
             },
         },
         defaultVariants: {
@@ -145,7 +145,7 @@ export const MultiSelect = React.forwardRef<
             maxCount = 10,
             maxCountLabel = '',
             modalPopover = false,
-            asChild = false,
+           // asChild = false,
             className,
             popoverContentClassName,
             ...props
@@ -159,17 +159,6 @@ export const MultiSelect = React.forwardRef<
 
         const [optionList, setOptionList] = React.useState(data)
 
-        const longestOption = React.useMemo(
-            () =>
-                optionList.reduce(
-                    (acc, curr) =>
-                        acc.label.length > curr.label.length ? acc : curr,
-                    {
-                        label: '',
-                    }
-                ),
-            [optionList]
-        )
 
         React.useEffect(() => {
             if (value.length > 0) {
@@ -199,7 +188,7 @@ export const MultiSelect = React.forwardRef<
                 const newSelectedValues = [...selectedValues]
                 newSelectedValues.pop()
                 setSelectedValues(newSelectedValues)
-                onValueChange &&
+                if (onValueChange) {
                     onValueChange(
                         newSelectedValues.map((value) => ({
                             label:
@@ -208,6 +197,7 @@ export const MultiSelect = React.forwardRef<
                             value,
                         }))
                     )
+                }
             }
         }
 
@@ -216,18 +206,21 @@ export const MultiSelect = React.forwardRef<
                 ? selectedValues.filter((value) => value !== option)
                 : [...selectedValues, option]
             setSelectedValues(newSelectedValues)
-            onValueChange &&
+            if (onValueChange) {
                 onValueChange(
                     newSelectedValues.map((value) => ({
                         label: data.find((o) => o.value === value)?.label || '',
                         value,
                     }))
                 )
+            }
         }
 
         const handleClear = () => {
             setSelectedValues([])
-            onValueChange && onValueChange([])
+            if (onValueChange) {
+                onValueChange([])
+            }
         }
 
         const handleTogglePopover = () => {
@@ -237,13 +230,14 @@ export const MultiSelect = React.forwardRef<
         const clearExtraOptions = () => {
             const newSelectedValues = selectedValues.slice(0, maxCount)
             setSelectedValues(newSelectedValues)
-            onValueChange &&
+            if (onValueChange) {
                 onValueChange(
                     newSelectedValues.map((value) => ({
                         label: data.find((o) => o.value === value)?.label || '',
                         value,
                     }))
                 )
+            }
         }
 
         const toggleAll = () => {
@@ -255,7 +249,9 @@ export const MultiSelect = React.forwardRef<
                     value: option.value,
                 }))
                 setSelectedValues(allValues.map((option) => option.value))
-                onValueChange && onValueChange(allValues)
+                if (onValueChange) {
+                    onValueChange(allValues)
+                }
             }
         }
 
@@ -278,7 +274,8 @@ export const MultiSelect = React.forwardRef<
                         {...props}
                         onClick={handleTogglePopover}
                         className={cn(
-                            'flex w-full px-1 rounded-md border items-center justify-between bg-white hover:bg-inherit h-fit',
+                            'flex w-full px-1 rounded-md border items-center justify-between bg-white h-fit',
+                            variant === 'default' ? 'hover:bg-gray-50' : 'hover:bg-inherit',
                             className
                         )}
                     >
@@ -302,7 +299,8 @@ export const MultiSelect = React.forwardRef<
                                                         multiSelectVariants({
                                                             variant,
                                                         }),
-                                                        'my-0'
+                                                        'my-0',
+                                                        variant === 'default' ? 'bg-white' : ''
                                                     )}
                                                     style={{
                                                         animationDuration: `${animation}s`,
@@ -325,11 +323,12 @@ export const MultiSelect = React.forwardRef<
                                     {selectedValues.length > maxCount && (
                                         <Badge
                                             className={cn(
-                                                'bg-transparent text-foreground border-foreground/1 hover:bg-transparent',
+                                                'text-foreground border-foreground/1',
                                                 isAnimating
                                                     ? 'animate-bounce'
                                                     : '',
-                                                multiSelectVariants({ variant })
+                                                multiSelectVariants({ variant }),
+                                                variant === 'default' ? 'bg-white' : 'bg-transparent hover:bg-transparent'
                                             )}
                                             style={{
                                                 animationDuration: `${animation}s`,
@@ -359,11 +358,11 @@ export const MultiSelect = React.forwardRef<
                 </PopoverTrigger>
                 <PopoverContent
                     className={cn(
-                        'w-auto p-0',
+                        'w-auto p-0 bg-white',
                         popoverContentClassName
                     )}
                     align="start"
-                    onEscapeKeyDown={setIsPopoverOpen.bind(null, false)}
+                    onEscapeKeyDown={() => setIsPopoverOpen(false)}
                 >
                     <Command shouldFilter={false}>
                         <CommandInput
@@ -405,7 +404,7 @@ export const MultiSelect = React.forwardRef<
                                             <span>(Chọn tất cả)</span>
                                         </CommandItem>
                                     )}
-                                {optionList.map((option, idx) => {
+                                {optionList.map((option) => {
                                     const isSelected = selectedValues.includes(option.value);
                                     return (
                                         <CommandItem

@@ -4,6 +4,11 @@ import { Cross2Icon } from '@radix-ui/react-icons'
 
 import { cn } from '@/lib/utils'
 
+// Định nghĩa interface cho button props
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+    variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
+}
+
 const Dialog = DialogPrimitive.Root
 
 const DialogTrigger = DialogPrimitive.Trigger
@@ -178,8 +183,8 @@ const ConfirmDialog = ({
     onCancel?: () => void;
     confirmText?: string;
     cancelText?: string;
-    confirmButtonProps?: any;
-    cancelButtonProps?: any;
+    confirmButtonProps?: ButtonProps;
+    cancelButtonProps?: ButtonProps;
     isLoading?: boolean;
 }) => {
     return (

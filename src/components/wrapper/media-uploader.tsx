@@ -6,11 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/toast';
-import { Image, File as FileIcon, X, Upload, Loader2, MapPin, Users, Trash2, AlertTriangle, FilePlus, ImagePlus, Music4, VideoIcon } from 'lucide-react';
+import { Image, X, Upload, Loader2, MapPin, Users, Trash2, AlertTriangle, FilePlus, Music4, VideoIcon } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { 
   useMinioControllerCreateUploadUrl, 
-  useMinioControllerPresignedGetObject,
   fetchMinioControllerPresignedGetObject
 } from '@/generated/api/chcnComponents';
 import { useCreateMedia, useFindManyMedia, useDeleteMedia } from '@/generated/hooks';
@@ -68,7 +67,6 @@ const MediaUploader: React.FC<MediaUploaderProps> = ({
   // Thay thế state đơn lẻ bằng mảng các file
   const [selectedFiles, setSelectedFiles] = useState<FileInfo[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<{[key: string]: number}>({});
   const [commonDescription, setCommonDescription] = useState('');
   
   const fileInputRef = useRef<HTMLInputElement>(null);

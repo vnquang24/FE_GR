@@ -5,11 +5,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form } from '@/components/ui/form';
 import { useCreateRescueType, useUpdateRescueType } from '@/generated/hooks';
 import { toast } from '@/components/ui/toast';
-import { rescueTypeSchema, RescueTypeFormValues } from '@/app/(main)/common/rescue-resource-type/page';
 import { Button } from '@/components/ui/button';
+import { z } from 'zod';
+
+const rescueTypeSchema = z.object({
+    id: z.string(),
+    name: z.string().min(1, { message: 'Tên phương thức cứu hộ không được để trống' }),
+    description: z.string().optional(),
+    unit: z.string().optional(),
+  });
+  
+type RescueTypeFormValues = z.infer<typeof rescueTypeSchema>;
 
 interface DialogCreateUpdateRescueResourceTypeProps {
     open: boolean;

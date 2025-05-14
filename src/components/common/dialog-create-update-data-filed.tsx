@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { FormDialog, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, ConfirmDialog } from '@/components/ui/dialog';
+import { FormDialog, ConfirmDialog } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useCreateDataField, useUpdateDataField, useFindManyDataField } from '@/generated/hooks';
 import { toast } from '@/components/ui/toast';
-import { Button } from '@/components/ui/button';
 import { z } from 'zod';
 import {
   Select,
@@ -17,7 +15,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Save, Loader2 } from 'lucide-react';
+
+// Định nghĩa interface cho DataFieldNode
+interface DataFieldNode {
+  id: string;
+  name: string;
+  code?: string | null;
+  unit?: string | null;
+  parentId?: string | null;
+  dataFieldGroup?: string;
+  $optimistic?: boolean;
+}
 
 // Định nghĩa schema validation
 export const dataFieldSchema = z.object({
@@ -157,7 +165,7 @@ const DialogCreateUpdateDataField: React.FC<DialogCreateUpdateDataFieldProps> = 
   const createDataFieldMutation = useCreateDataField();
   const updateDataFieldMutation = useUpdateDataField();
 
-  const onSubmit = (values: DataFieldFormValues) => {
+  const onSubmit = () => {
     setIsConfirmOpen(true);
   };
 
@@ -223,11 +231,11 @@ const DialogCreateUpdateDataField: React.FC<DialogCreateUpdateDataFieldProps> = 
   // Lọc ra danh sách node cha hợp lệ (không bao gồm chính node hiện tại để tránh tạo vòng lặp)
   const validParentOptions = allDataFields?.filter(field => field.id !== initialData?.id) || [];
 
-  // Tạo cấu trúc cây để hiển thị node cha theo thứ tự phân cấp
-  const getParentName = (id: string) => {
-    const parent = allDataFields?.find(field => field.id === id);
-    return parent ? parent.name : '';
-  };
+  // // Tạo cấu trúc cây để hiển thị node cha theo thứ tự phân cấp
+  // const getParentName = (id: string) => {
+  //   const parent = allDataFields?.find(field => field.id === id);
+  //   return parent ? parent.name : '';
+  // };
 
   // Sắp xếp và phân nhóm các node để hiển thị với thứ tự phân cấp
   const rootNodes = validParentOptions.filter(node => !node.parentId);
@@ -251,7 +259,7 @@ const DialogCreateUpdateDataField: React.FC<DialogCreateUpdateDataFieldProps> = 
 
   // Render các SelectItem theo cấu trúc cây
   const renderTreeSelectItems = () => {
-    const renderNode = (node: any, level = 0) => {
+    const renderNode = (node: DataFieldNode, level = 0) => {
       const children = getChildNodes(node.id);
       const hasNodeChildren = children.length > 0;
       const isExpanded = expandedNodes.includes(node.id);

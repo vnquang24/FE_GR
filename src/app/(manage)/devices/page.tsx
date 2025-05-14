@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import { useFindManyDevice, useDeleteDevice } from '@/generated/hooks/index';
+import { useFindManyDevice } from '@/generated/hooks/index';
 import { useAuthControllerDeleteDevice } from '@/generated/api/chcnComponents';
 
 import { useToast } from '@/components/ui/toast';
@@ -183,7 +183,7 @@ const ManageDevicePage: React.FC = () => {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Đăng xuất từ thiết bị này?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Hành động này sẽ đăng xuất tài khoản của bạn khỏi thiết bị "{device.name}". 
+                              Hành động này sẽ đăng xuất tài khoản của bạn khỏi thiết bị &quot;{device.name}&quot;. 
                               Bạn sẽ cần đăng nhập lại nếu muốn sử dụng trên thiết bị này.
                             </AlertDialogDescription>
                           </AlertDialogHeader>

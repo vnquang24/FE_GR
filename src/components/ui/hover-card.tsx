@@ -8,9 +8,6 @@ const HoverCard = HoverCardPrimitive.Root
 // Re-export Trigger component
 const HoverCardTrigger = HoverCardPrimitive.Trigger
 
-// Re-export Portal component
-const HoverCardPortal = HoverCardPrimitive.Portal
-
 // Content component với styling
 const HoverCardContent = React.forwardRef<
   React.ElementRef<typeof HoverCardPrimitive.Content>,

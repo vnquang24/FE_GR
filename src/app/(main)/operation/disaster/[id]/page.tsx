@@ -219,7 +219,6 @@ const DisasterDetailPage = () => {
     select: { id: true, name: true },
     where: { deleted: null }
   });
-
   // Optimize query parameters with useMemo
   const districtQueryParams = useMemo(() => ({
     select: { id: true, name: true, provinceId: true },

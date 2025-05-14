@@ -15,12 +15,22 @@ export default function MainLayout({
 }) {
   const pathname = usePathname();
   const [userData, setUserData] = useState({ name: "Đang tải...", icon: null });
+    // Ngăn chặn thanh cuộn trên body và html
+    useEffect(() => {
+      // Thêm class để ẩn thanh cuộn
+      document.body.classList.add('overflow-hidden');
+      document.documentElement.classList.add('overflow-hidden');
+      
+      // Cleanup khi component unmount
+      return () => {
+        document.body.classList.remove('overflow-hidden');
+        document.documentElement.classList.remove('overflow-hidden');
+      };
+    }, []);
   
   // Lấy userId từ access token
   const userId = getUserId() || '';
-  if (!userId) {
-    return <div className="flex items-center justify-center h-screen">Đang tải...</div>;
-  }
+  
   // Fetch user data dựa vào userId từ access token
   const { data: user } = useFindUniqueUser(
     {
@@ -39,6 +49,11 @@ export default function MainLayout({
       setUserData({ name: user.name, icon: null });
     }
   }, [user]);
+
+  // Early return nếu không có userId
+  if (!userId) {
+    return <div className="flex items-center justify-center h-screen">Đang tải...</div>;
+  }
 
   // Function to find menu item label by pathname
   const findMenuLabel = (path: string): string => {

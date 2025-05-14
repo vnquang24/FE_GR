@@ -5,10 +5,20 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/toast';
-import { PriorityLevelFormData, priorityLevelFormSchema } from '@/app/(main)/common/priority-level/page';
 import { Button } from '@/components/ui/button';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+
+// Định nghĩa schema validation sử dụng Zod
+const priorityLevelFormSchema = z.object({
+  id: z.string(),
+  name: z.string().trim().min(1, { message: "Tên độ ưu tiên không được để trống" }),
+  description: z.string().optional(), // Cho phép null hoặc undefined, và là tùy chọn
+});
+
+// Định nghĩa kiểu dữ liệu từ schema Zod
+type PriorityLevelFormData = z.infer<typeof priorityLevelFormSchema>;
 
 interface DialogCreateUpdatePriorityLevelProps {
   open: boolean;
@@ -59,7 +69,7 @@ const DialogCreateUpdatePriorityLevel: React.FC<DialogCreateUpdatePriorityLevelP
   const createPriorityLevelMutation = useCreatePriorityLevel();
   const updatePriorityLevelMutation = useUpdatePriorityLevel();
 
-  const onSubmit = (data: PriorityLevelFormData) => {
+  const onSubmit = () => {
     setIsConfirmOpen(true);
   };
 

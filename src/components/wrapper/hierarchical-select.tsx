@@ -11,7 +11,7 @@ export type DataFieldNode = {
   parentId?: string;
   dataFieldGroup?: string;
   $optimistic?: boolean;
-  [key: string]: any;
+  [key: string]: string | boolean | undefined;
 };
 
 interface HierarchicalSelectProps {
@@ -40,7 +40,6 @@ const HierarchicalSelect: React.FC<HierarchicalSelectProps> = ({
   emptyMessage = 'Không có trường dữ liệu khả dụng',
   rootGroupLabel = 'Trường dữ liệu cấp 1',
   className,
-  onSelectNode,
   filterFunction
 }) => {
   const [expandedNodes, setExpandedNodes] = useState<string[]>([]);
@@ -113,46 +112,46 @@ const HierarchicalSelect: React.FC<HierarchicalSelectProps> = ({
     );
   };
 
-  // Xử lý sự kiện khi một node được chọn
-  const handleNodeSelect = (nodeId: string, e?: React.MouseEvent) => {
-    // Ngăn chặn sự kiện mặc định và bubbling nếu e tồn tại
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
+  // // Xử lý sự kiện khi một node được chọn
+  // const handleNodeSelect = (nodeId: string, e?: React.MouseEvent) => {
+  //   // Ngăn chặn sự kiện mặc định và bubbling nếu e tồn tại
+  //   if (e) {
+  //     e.preventDefault();
+  //     e.stopPropagation();
+  //   }
 
-    // Gọi callback onSelectNode nếu được cung cấp
-    if (onSelectNode) {
-      // Tìm node được chọn từ danh sách
-      const selectedNode = dataFields.find(field => field.id === nodeId);
+  //   // Gọi callback onSelectNode nếu được cung cấp
+  //   if (onSelectNode) {
+  //     // Tìm node được chọn từ danh sách
+  //     const selectedNode = dataFields.find(field => field.id === nodeId);
       
-      if (selectedNode) {
-        // Đóng tất cả các node khác và chỉ mở rộng đường dẫn đến node được chọn
-        if (selectedNode.parentId) {
-          // Nếu node có parent, mở rộng đường dẫn đến parent
-          let currentParentId = selectedNode.parentId;
-          const parentsToExpand = [currentParentId];
+  //     if (selectedNode) {
+  //       // Đóng tất cả các node khác và chỉ mở rộng đường dẫn đến node được chọn
+  //       if (selectedNode.parentId) {
+  //         // Nếu node có parent, mở rộng đường dẫn đến parent
+  //         let currentParentId = selectedNode.parentId;
+  //         const parentsToExpand = [currentParentId];
           
-          // Lặp qua các cấp parent để mở rộng
-          while (currentParentId) {
-            const parentNode = dataFields.find(field => field.id === currentParentId);
-            if (parentNode && parentNode.parentId) {
-              parentsToExpand.push(parentNode.parentId);
-              currentParentId = parentNode.parentId;
-            } else {
-              break;
-            }
-          }
+  //         // Lặp qua các cấp parent để mở rộng
+  //         while (currentParentId) {
+  //           const parentNode = dataFields.find(field => field.id === currentParentId);
+  //           if (parentNode && parentNode.parentId) {
+  //             parentsToExpand.push(parentNode.parentId);
+  //             currentParentId = parentNode.parentId;
+  //           } else {
+  //             break;
+  //           }
+  //         }
           
-          // Cập nhật trạng thái các node đã mở rộng
-          setExpandedNodes(parentsToExpand);
-        }
+  //         // Cập nhật trạng thái các node đã mở rộng
+  //         setExpandedNodes(parentsToExpand);
+  //       }
         
-        // Gọi callback với nodeId được chọn
-        onSelectNode(nodeId);
-      }
-    }
-  };
+  //       // Gọi callback với nodeId được chọn
+  //       onSelectNode(nodeId);
+  //     }
+  //   }
+  // };
 
   // Render default select item nếu không có renderItem được cung cấp
   const defaultRenderItem = (node: DataFieldNode, level: number, hasNodeChildren: boolean, isExpanded: boolean) => {

@@ -19,6 +19,16 @@ import {
 } from "@/components/ui/select";
 import React from "react";
 
+interface DataFieldNode {
+  id: string;
+  name: string;
+  code?: string | null;
+  unit?: string | null;
+  parentId?: string | null;
+  dataFieldGroup?: string;
+  $optimistic?: boolean;
+}
+
 const formSchema = z.object({
   name: z.string().min(1, "Tên là bắt buộc"),
   description: z.string().optional(),
@@ -213,11 +223,11 @@ export const CreateNodeDialog = ({
   // Lọc ra danh sách node cha hợp lệ (không bao gồm chính node hiện tại để tránh tạo vòng lặp)
   const validParentOptions = allDataFields?.filter(field => field.id !== nodeId) || [];
 
-  // Tạo cấu trúc cây để hiển thị node cha theo thứ tự phân cấp
-  const getParentName = (id: string) => {
-    const parent = allDataFields?.find(field => field.id === id);
-    return parent ? parent.name : '';
-  };
+  // // Tạo cấu trúc cây để hiển thị node cha theo thứ tự phân cấp
+  // const getParentName = (id: string) => {
+  //   const parent = allDataFields?.find(field => field.id === id);
+  //   return parent ? parent.name : '';
+  // };
 
   // Sắp xếp và phân nhóm các node để hiển thị với thứ tự phân cấp
   const rootNodes = validParentOptions.filter(node => !node.parentId);
@@ -227,10 +237,10 @@ export const CreateNodeDialog = ({
     return validParentOptions.filter(node => node.parentId === parentId);
   };
 
-  // Kiểm tra xem node có chứa node con không
-  const hasChildren = (nodeId: string) => {
-    return validParentOptions.some(node => node.parentId === nodeId);
-  };
+  // // Kiểm tra xem node có chứa node con không
+  // const hasChildren = (nodeId: string) => {
+  //   return validParentOptions.some(node => node.parentId === nodeId);
+  // };
 
   // Toggle mở rộng/thu gọn một node
   const toggleNodeExpansion = (nodeId: string, e: React.MouseEvent) => {
@@ -246,7 +256,7 @@ export const CreateNodeDialog = ({
 
   // Render các SelectItem theo cấu trúc cây
   const renderTreeSelectItems = () => {
-    const renderNode = (node: any, level = 0) => {
+    const renderNode = (node: DataFieldNode, level = 0) => {
       const children = getChildNodes(node.id);
       const hasNodeChildren = children.length > 0;
       const isExpanded = expandedNodes.includes(node.id);

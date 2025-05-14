@@ -17,14 +17,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import * as z from 'zod';
 
 // Định nghĩa schema validation sử dụng Zod
-export const priorityLevelFormSchema = z.object({
+const priorityLevelFormSchema = z.object({
   id: z.string(),
   name: z.string().trim().min(1, { message: "Tên độ ưu tiên không được để trống" }),
   description: z.string().optional(), // Cho phép null hoặc undefined, và là tùy chọn
 });
 
 // Định nghĩa kiểu dữ liệu từ schema Zod
-export type PriorityLevelFormData = z.infer<typeof priorityLevelFormSchema>;
+type PriorityLevelFormData = z.infer<typeof priorityLevelFormSchema>;
 
 const PriorityLevelPage: React.FC = () => {
   const [searchText, setSearchText] = useState<string>('')

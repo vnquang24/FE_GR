@@ -5,12 +5,19 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/toast';
-import { EmergencyLevelFormData } from '@/app/(main)/common/emergency-level/page';
 import { Button } from '@/components/ui/button';
-import { emergencyLevelFormSchema } from '@/app/(main)/common/emergency-level/page';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import * as z from 'zod';
+import { z } from 'zod';
+
+// Định nghĩa schema validation sử dụng Zod
+const emergencyLevelFormSchema = z.object({
+  id: z.string(),
+  name: z.string().trim().min(1, { message: "Tên cấp khẩn cấp không được để trống" }),
+  description: z.string().optional(), // Cho phép null hoặc undefined, và là tùy chọn
+});
+
+type EmergencyLevelFormData = z.infer<typeof emergencyLevelFormSchema>;
 
 interface DialogCreateUpdateEmergencyLevelProps {
   open: boolean;
@@ -40,7 +47,7 @@ const DialogCreateUpdateEmergencyLevel: React.FC<DialogCreateUpdateEmergencyLeve
     }
   });
   
-  const { register, handleSubmit, formState: { errors }, reset, getValues, setValue } = form;
+  const { register, handleSubmit, formState: { errors }, reset, getValues } = form;
 
   useEffect(() => {
     if (mode === 'update' && initialData) {
@@ -61,7 +68,7 @@ const DialogCreateUpdateEmergencyLevel: React.FC<DialogCreateUpdateEmergencyLeve
   const createEmergencyLevelMutation = useCreateEmergencyLevel();
   const updateEmergencyLevelMutation = useUpdateEmergencyLevel();
 
-  const onSubmit = (data: EmergencyLevelFormData) => {
+  const onSubmit = () => {
     setIsConfirmOpen(true);
   };
 

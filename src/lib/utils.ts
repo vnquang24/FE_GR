@@ -1,7 +1,6 @@
 import { clsx, type ClassValue } from 'clsx'
 import dayjs, { Dayjs } from 'dayjs'
 import { twMerge } from 'tailwind-merge'
-import { Badge } from "@/components/ui/badge";
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
@@ -110,30 +109,6 @@ const cudMany = <
 }
 
 
-
-const arrayToObject = <T extends Record<string, any>>(
-    arr: Array<T>,
-    key: keyof T,
-    mapFn?: (item: T, currentIndex: number, currentArray: Array<T>) => any
-) => {
-    return arr.reduce(
-        (payload, item, currentIndex, currentArr) => {
-            payload[item[key]] = mapFn
-                ? mapFn(item, currentIndex, currentArr)
-                : item
-            return payload
-        },
-        {} as Record<string, any>
-    )
-}
-
-const arrayRemoveDuplicates = <T extends Record<string, any>>(
-    arr: Array<T>,
-    mapFn: (item: T, currentIndex: number, currentArray: Array<T>) => any
-) => {
-    return [...new Set(arr.map(mapFn).flat())]
-}
-
 const formatNiceBytes = (x: string) => {
     const units = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
     let l = 0,
@@ -189,12 +164,13 @@ const generateDisasterName = (
     
     // Tạo mã ngắn duy nhất từ các thông tin
     const generateUniqueCode = () => {
-        // Lấy kí tự đầu của loại thảm họa
-        const typeCode = disasterType ? disasterType.charAt(0).toUpperCase() : 'X';
+        // Lấy kí tự đầu của loại thảm họa và loại bỏ dấu
+        const typeFirstChar = disasterType ? disasterType.charAt(0) : 'X';
+        const typeCode = stringToSlug(typeFirstChar).toUpperCase();
         
-        // Lấy kí tự đầu của tỉnh đầu tiên nếu có
-        const provinceCode = provinceNames.length > 0 ? 
-            provinceNames[0].charAt(0).toUpperCase() : 'Z';
+        // Lấy kí tự đầu của tỉnh đầu tiên nếu có và loại bỏ dấu
+        const provinceFirstChar = provinceNames.length > 0 ? provinceNames[0].charAt(0) : 'Z';
+        const provinceCode = stringToSlug(provinceFirstChar).toUpperCase();
         
         // Lấy timestamp từ thời gian bắt đầu hoặc thời gian hiện tại
         const timestamp = startDateTime ? 
@@ -251,8 +227,6 @@ export {
     stringToSlug,
     formatDateReadable,
     cudMany,
-    arrayToObject,
-    arrayRemoveDuplicates,
     formatNiceBytes,
     findMapCenter,
     getStatusIndicator,

@@ -1,7 +1,7 @@
 // pages/register.tsx
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -24,7 +24,7 @@ const registerFormSchema = z.object({
 
 type registerFormType = z.infer<typeof registerFormSchema>;
 
-const registerPage: React.FC = () => {
+const RegisterPage: React.FC = () => {
     const router = useRouter();
     // Sử dụng React Hook Form với Zod Resolver
     const {
@@ -130,4 +130,4 @@ const registerPage: React.FC = () => {
     );
 };
 
-export default registerPage;
+export default RegisterPage;
