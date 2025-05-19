@@ -1,8 +1,8 @@
 'use client';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useFindUniqueDisaster, useUpdateDisaster, useFindManyDisasterType, useFindManyPriorityLevel, useFindManyEmergencyLevel, useFindManyProvince, useFindManyDistrict, useFindManyCommune, useFindManyDataField, useCreateDataFieldOnDisaster, useUpdateDataFieldOnDisaster, useDeleteDataFieldOnDisaster, useUpdateRescueTypeOnDisaster, useUpdateCoordinate } from '@/generated/hooks';
-import { Disaster } from '@prisma/client';
+import { useFindUniqueDisaster, useUpdateDisaster, useFindManyDisasterType, useFindManyPriorityLevel, useFindManyEmergencyLevel, useFindManyProvince, useFindManyDistrict, useFindManyCommune, useFindManyDataField, useCreateDataFieldOnDisaster, useUpdateDataFieldOnDisaster, useDeleteDataFieldOnDisaster, useUpdateRescueTypeOnDisaster, useUpdateCoordinate, useFindManyRescueType, useCreateRescueTypeOnDisaster, useDeleteRescueTypeOnDisaster } from '@/generated/hooks';
+import { Disaster, RescueType } from '@prisma/client';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -25,6 +25,7 @@ import HierarchicalSelect, { DataFieldNode } from '@/components/wrapper/hierarch
 import { generateDisasterName } from '@/lib/utils';
 import MediaUploader from '@/components/wrapper/media-uploader';
 import { getUserId } from '@/utils/auth';
+import { HydrationBoundary } from '@tanstack/react-query';
 // Tạo kiểu dữ liệu mở rộng từ DataField của Prisma
 type DataFieldWithOptimistic = Partial<DataField> & {
   id: string;
@@ -67,12 +68,9 @@ const DisasterDetailPage = () => {
   const router = useRouter();
   const disasterId = params.id as string;
   const userID = getUserId();
-  // Lấy giá trị operationNowPage từ Redux store
-  const operationNowPage = useStoreState(state => state.appState.operationNowPage);
-
   // State cho chế độ chỉnh sửa
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-
+  //const 
   const [basicInfo, setBasicInfo] = useState({
     name: '',
     description: ''
@@ -95,19 +93,32 @@ const DisasterDetailPage = () => {
     selectedCommunes: [] as string[]
   });
 
+  const [rescueTypeForm, setRescueTypeForm] = useState({
+    id: '', // Thêm trường id để phân biệt thêm mới hay cập nhật
+    disasterId: disasterId,
+    rescueTypeId: '',
+    value: 0,
+    unitId: '' as string | undefined,
+    startDate: undefined as Date | undefined,
+    endDate: undefined as Date | undefined,
+    source: '' as string | undefined
+  });
+
   // State for DataField edit
   const [dataFieldValues, setDataFieldValues] = useState<{ [key: string]: number }>({});
   const [showAddDataFieldDialog, setShowAddDataFieldDialog] = useState(false);
   const [selectedDataField, setSelectedDataField] = useState<string>('');
   const [newDataFieldValue, setNewDataFieldValue] = useState<string>('');
   const [activeTab, setActiveTab] = useState<string>('disasterData');
-
+  //
   // Thêm state cho việc chỉnh sửa giá trị cứu hộ
+  const [showAddRescueDialog, setShowAddRescueDialog] = useState(false);
   const [rescueTypeValues, setRescueTypeValues] = useState<{ [key: string]: number }>({});
   const [rescueTypeStartDates, setRescueTypeStartDates] = useState<{ [key: string]: Date | undefined }>({});
   const [rescueTypeEndDates, setRescueTypeEndDates] = useState<{ [key: string]: Date | undefined }>({});
   const [rescueTypeUnitIds, setRescueTypeUnitIds] = useState<{ [key: string]: string }>({});
 
+  
   // Thêm state cho dialog chỉnh sửa tọa độ
   const [isCoordinateModalOpen, setIsCoordinateModalOpen] = useState(false);
   const [coordinateData, setCoordinateData] = useState<{
@@ -316,23 +327,7 @@ const DisasterDetailPage = () => {
       });
     }
   });
-
-  const deleteDataFieldMutation = useDeleteDataFieldOnDisaster({
-    onSuccess: () => {
-      toast.success({
-        title: "Thành công",
-        description: "Đã xóa trường dữ liệu"
-      });
-      refetch();
-    },
-    onError: (error) => {
-      toast.error({
-        title: "Lỗi",
-        description: `Không thể xóa trường dữ liệu: ${error.message}`
-      });
-    }
-  });
-
+  
   // Cập nhật useEffect để cập nhật các state tách biệt
   useEffect(() => {
     if (disaster) {
@@ -502,7 +497,7 @@ const DisasterDetailPage = () => {
     onError: (error) => {
       toast.error({
         title: "Lỗi",
-        description: `Không thể cập nhật thông tin cứu hộ: ${error.message}`
+        description: `Không thể cập nhật thông tin cứu hộ: ${error.message || 'Đã xảy ra lỗi'}`
       });
     }
   });
@@ -687,9 +682,107 @@ const DisasterDetailPage = () => {
     router.push('/operation/disaster');
   };
 
-  const handleGotoRescuePage = () => {
-    router.push('/operation/rescue-resource');
-  }
+  // Hàm xử lý thêm mới hoặc cập nhật cứu hộ
+  const handleAddOrUpdateRescue = async () => {
+    try {
+      if (!rescueTypeForm.rescueTypeId || !rescueTypeForm.unitId) {
+        toast.error({
+          title: "Lỗi",
+          description: "Vui lòng nhập đầy đủ loại cứu hộ và đơn vị"
+        });
+        return;
+      }
+
+      if (rescueTypeForm.id) {
+        // Cập nhật
+        await updateRescueTypeMutation.mutateAsync({
+          where: { id: rescueTypeForm.id },
+          data: {
+            rescueType: {
+              connect: { id: rescueTypeForm.rescueTypeId }
+            },
+            value: rescueTypeForm.value,
+            unit: {
+              connect: { id: rescueTypeForm.unitId }
+            },
+            startDate: rescueTypeForm.startDate,
+            endDate: rescueTypeForm.endDate,
+            source: rescueTypeForm.source
+          }
+        });
+        
+        toast.success({
+          title: "Thành công",
+          description: "Đã cập nhật thông tin cứu hộ"
+        });
+      } else {
+        // Tạo mới
+        await createRescueTypeOnDisasterMutation.mutateAsync({
+          data: {
+            disaster: {
+              connect: { id: disasterId }
+            },
+            rescueType: {
+              connect: { id: rescueTypeForm.rescueTypeId }
+            },
+            value: rescueTypeForm.value,
+            unit: {
+              connect: { id: rescueTypeForm.unitId }
+            },
+            startDate: rescueTypeForm.startDate,
+            endDate: rescueTypeForm.endDate,
+            source: rescueTypeForm.source
+          }
+        });
+      }
+      
+      setShowAddRescueDialog(false);
+      resetRescueTypeForm();
+      refetch();
+    } catch (error: any) {
+      console.error("Lỗi khi xử lý thông tin cứu hộ:", error);
+      toast.error({
+        title: "Lỗi",
+        description: `Không thể xử lý thông tin cứu hộ: ${error.message || 'Đã xảy ra lỗi'}`
+      });
+    }
+  };
+
+  // Hàm để chỉnh sửa cứu hộ hiện có
+  const handleEditRescue = (rescueType: any) => {
+    setRescueTypeForm({
+      id: rescueType.id,
+      disasterId: disasterId,
+      rescueTypeId: rescueType.rescueTypeId,
+      value: rescueType.value,
+      unitId: rescueType.unitId,
+      startDate: rescueType.startDate ? new Date(rescueType.startDate) : undefined,
+      endDate: rescueType.endDate ? new Date(rescueType.endDate) : undefined,
+      source: rescueType.source || ''
+    });
+    setShowAddRescueDialog(true);
+  };
+
+  // Hàm reset form cứu hộ
+  const resetRescueTypeForm = () => {
+    setRescueTypeForm({
+      id: '',
+      disasterId: disasterId,
+      rescueTypeId: '',
+      value: 0,
+      unitId: '',
+      startDate: undefined,
+      endDate: undefined,
+      source: ''
+    });
+  };
+
+  // Thay thế hàm handleAddRescue hiện tại
+  const handleAddRescue = () => {
+    resetRescueTypeForm();
+    setShowAddRescueDialog(true);
+  };
+
   // Hàm lấy tên phân cấp của trường dữ liệu (hỗ trợ đến cấp 6)
   const getDataFieldHierarchyName = (dataFieldId: string) => {
     if (!availableDataFields) return { name: "", hierarchyPath: [] };
@@ -730,38 +823,6 @@ const DisasterDetailPage = () => {
       hierarchyPath
     };
   };
-
-  // Thêm hàm xử lý thay đổi giá trị cứu hộ
-  const handleRescueTypeValueChange = (id: string, value: string) => {
-    setRescueTypeValues({
-      ...rescueTypeValues,
-      [id]: parseFloat(value) || 0
-    });
-  };
-
-  // Hàm xử lý khi thay đổi thời gian cứu hộ
-  const handleRescueTypeStartDateChange = (id: string, date: Date | undefined) => {
-    setRescueTypeStartDates({
-      ...rescueTypeStartDates,
-      [id]: date
-    });
-  };
-
-  const handleRescueTypeEndDateChange = (id: string, date: Date | undefined) => {
-    setRescueTypeEndDates({
-      ...rescueTypeEndDates,
-      [id]: date
-    });
-  };
-
-  // Thêm hàm xử lý khi thay đổi đơn vị
-  const handleRescueTypeUnitChange = (id: string, unitId: string) => {
-    setRescueTypeUnitIds({
-      ...rescueTypeUnitIds,
-      [id]: unitId
-    });
-  };
-
   // Hàm xử lý khi thay đổi thông tin tọa độ
   const handleCoordinateChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -803,14 +864,6 @@ const DisasterDetailPage = () => {
     }
   };
 
-  // Hàm xử lý khi vị trí trên bản đồ thay đổi
-  const handleMapPositionChange = (lat: number, lng: number) => {
-    setCoordinateData(prev => ({
-      ...prev,
-      lat,
-      lng
-    }));
-  };
 
   // Thêm các section UI được memoize để tránh re-render không cần thiết
   const BasicInfoSection = useMemo(() => (
@@ -937,26 +990,26 @@ const DisasterDetailPage = () => {
     </div>
   ), [timeData, disaster, handleDateChange, formatDate]);
 
-  // Hàm cập nhật thông tin cứu hộ
-  const handleUpdateRescueType = async (id: string) => {
-    try {
-      await updateRescueTypeMutation.mutateAsync({
-        where: { id },
-        data: {
-          value: rescueTypeValues[id],
-          unitId: rescueTypeUnitIds[id],
-          startDate: rescueTypeStartDates[id],
-          endDate: rescueTypeEndDates[id]
-        }
-      });
-    } catch (error: any) {
-      console.error("Lỗi khi cập nhật thông tin cứu hộ:", error);
-      toast.error({
-        title: "Lỗi",
-        description: `Không thể cập nhật thông tin cứu hộ: ${error.message || 'Đã xảy ra lỗi'}`
-      });
-    }
-  };
+  // // Hàm cập nhật thông tin cứu hộ
+  // const handleUpdateRescueType = async (id: string) => {
+  //   try {
+  //     await updateRescueTypeMutation.mutateAsync({
+  //       where: { id },
+  //       data: {
+  //         value: rescueTypeValues[id],
+  //         unitId: rescueTypeUnitIds[id],
+  //         startDate: rescueTypeStartDates[id],
+  //         endDate: rescueTypeEndDates[id]
+  //       }
+  //     });
+  //   } catch (error: any) {
+  //     console.error("Lỗi khi cập nhật thông tin cứu hộ:", error);
+  //     toast.error({
+  //       title: "Lỗi",
+  //       description: `Không thể cập nhật thông tin cứu hộ: ${error.message || 'Đã xảy ra lỗi'}`
+  //     });
+  //   }
+  // };
 
   // Sắp xếp danh sách cứu hộ theo thời gian bắt đầu từ gần hiện tại nhất đến xa nhất
   const sortedRescueTypes = useMemo(() => {
@@ -1020,6 +1073,54 @@ const DisasterDetailPage = () => {
     </Card>
   ), [disaster, handleMediaUploadSuccess, userID, showMediaUploadDialog]);
 
+  // Lấy danh sách các loại cứu hộ
+  const { data: rescueTypes } = useFindManyRescueType({
+    select: { id: true, name: true },
+    where: { deleted: null }
+  });
+
+  // Chuyển đổi danh sách rescueTypes thành dạng options
+  const rescueTypeOptions = React.useMemo(() =>
+    rescueTypes?.map(type => ({ value: type.id, label: type.name })) || [],
+    [rescueTypes]
+  );
+  
+  // Thêm mutation để tạo mới RescueTypeOnDisaster
+  const createRescueTypeOnDisasterMutation = useCreateRescueTypeOnDisaster({
+    onSuccess: () => {
+      toast.success({
+        title: "Thành công",
+        description: "Đã thêm thông tin cứu hộ mới"
+      });
+      refetch();
+      setShowAddRescueDialog(false);
+      resetRescueTypeForm();
+    },
+    onError: (error) => {
+      toast.error({
+        title: "Lỗi",
+        description: `Không thể thêm thông tin cứu hộ: ${error.message || 'Đã xảy ra lỗi'}`
+      });
+    }
+  });
+
+  // Thêm mutation để xóa RescueTypeOnDisaster
+  const deleteRescueTypeMutation = useDeleteRescueTypeOnDisaster({
+    onSuccess: () => {
+      toast.success({
+        title: "Thành công",
+        description: "Đã xóa thông tin cứu hộ"
+      });
+      refetch();
+    },
+    onError: (error) => {
+      toast.error({
+        title: "Lỗi",
+        description: `Không thể xóa thông tin cứu hộ: ${error.message || 'Đã xảy ra lỗi'}`
+      });
+    }
+  });
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -1063,6 +1164,23 @@ const DisasterDetailPage = () => {
     );
   }
 
+  // Hàm xử lý xóa thông tin cứu hộ
+  const handleDeleteRescue = async (id: string) => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa thông tin cứu hộ này?')) {
+      try {
+        await deleteRescueTypeMutation.mutateAsync({
+          where: { id }
+        });
+      } catch (error: any) {
+        console.error("Lỗi khi xóa thông tin cứu hộ:", error);
+        toast.error({
+          title: "Lỗi",
+          description: `Không thể xóa thông tin cứu hộ: ${error.message || 'Đã xảy ra lỗi'}`
+        });
+      }
+    }
+  };
+
   return (
     <div className="w-full mx-auto p-2 sm:p-4">
       <div className="flex items-center mb-6">
@@ -1075,7 +1193,6 @@ const DisasterDetailPage = () => {
           <ArrowLeft className="mr-2 h-4 w-4" /> Quay lại
         </Button>
         <h1 className="text-2xl font-bold text-gray-800 flex-1">
-          {/* Thay đổi từ Input sang hiển thị tên, không cho phép chỉnh sửa */}
           <div className="font-bold text-xl">
             {basicInfo.name}
           </div>
@@ -1449,7 +1566,7 @@ const DisasterDetailPage = () => {
                   variant="outline"
                   size="sm"
                   className="text-green-600 border-green-200 bg-green-50 hover:bg-green-100"
-                  onClick={handleGotoRescuePage}
+                  onClick={() => setShowAddRescueDialog(true)}
                 >
                   <Plus className="h-4 w-4 mr-1" /> Quản lý cứu hộ
                 </Button>
@@ -1463,19 +1580,14 @@ const DisasterDetailPage = () => {
                     {
                       header: "Loại cứu hộ",
                       accessorKey: "name",
-                      className: "w-[25%]",
+                      className: "w-[20%]",
                       cell: (item) => <span className="font-medium">{item.name}</span>
                     },
                     {
                       header: "Số lượng",
                       accessorKey: "value",
                       cell: (item) => (
-                        <Input
-                          type="number"
-                          value={rescueTypeValues[item.id] !== undefined ? rescueTypeValues[item.id] : item.value}
-                          onChange={(e) => handleRescueTypeValueChange(item.id, e.target.value)}
-                          className="w-24"
-                        />
+                        <div className="text-sm">{item.value}</div>
                       )
                     },
                     {
@@ -1487,42 +1599,40 @@ const DisasterDetailPage = () => {
                       header: "Thời gian bắt đầu",
                       accessorKey: "startDate",
                       cell: (item) => (
-                        <DateTimePickerWrapper
-                          value={rescueTypeStartDates[item.id] || item.startDate}
-                          onChange={(date) => handleRescueTypeStartDateChange(item.id, date)}
-                          showTime={true}
-                          showClear={true}
-                          placeHolder="Chọn thời gian"
-                          className="w-full"
-                        />
+                        <div className="text-sm">{item.startDate ? format(new Date(item.startDate), 'dd/MM/yyyy HH:mm', { locale: vi }) : "-"}</div>
                       )
                     },
                     {
                       header: "Thời gian kết thúc",
                       accessorKey: "endDate",
                       cell: (item) => (
-                        <DateTimePickerWrapper
-                          value={rescueTypeEndDates[item.id] || item.endDate}
-                          onChange={(date) => handleRescueTypeEndDateChange(item.id, date)}
-                          showTime={true}
-                          showClear={true}
-                          placeHolder="Chọn thời gian"
-                          className="w-full"
-                          minDate={rescueTypeStartDates[item.id] || item.startDate}
-                        />
+                        <div className="text-sm">{item.endDate ? format(new Date(item.endDate), 'dd/MM/yyyy HH:mm', { locale: vi }) : "-"}</div>
                       )
+                    },
+                    {
+                      header: "Nguồn gốc",
+                      accessorKey: "source",
+                      cell: (item) => <div className="text-sm">{item.source || "-"}</div>
                     },
                     {
                       header: "Thao tác",
                       cell: (item) => (
-                        <div className="text-center">
+                        <div className="text-center flex justify-center space-x-2">
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleUpdateRescueType(item.id)}
+                            onClick={() => handleEditRescue(item)}
                             className="h-8 text-blue-500 hover:text-blue-700 hover:bg-blue-50"
                           >
-                            <Save className="h-5 w-5 mr-1" /> Lưu
+                            <Edit className="h-4 w-4 mr-1" /> Sửa
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteRescue(item.id)}
+                            className="h-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" /> Xóa
                           </Button>
                         </div>
                       ),
@@ -1535,12 +1645,14 @@ const DisasterDetailPage = () => {
                     name: rescueType.rescueType?.name || "Không xác định",
                     unitName: rescueType.unit?.name || "",
                     unitId: rescueType.unitId,
+                    rescueTypeId: rescueType.rescueTypeId,
                     startDate: rescueType.startDate || undefined,
-                    endDate: rescueType.endDate || undefined
+                    endDate: rescueType.endDate || undefined,
+                    source: rescueType.source || ""
                   }))}
                   emptyState={
                     <TableRow>
-                      <TableCell colSpan={6} className="h-[300px]">
+                      <TableCell colSpan={7} className="h-[300px]">
                         <div className="text-center py-8 bg-gray-50 rounded-md">
                           <Shield className="h-10 w-10 text-gray-400 mx-auto mb-3" />
                           <p className="text-gray-500 mb-2">Không có thông tin cứu hộ</p>
@@ -1548,9 +1660,9 @@ const DisasterDetailPage = () => {
                           <Button
                             variant="outline"
                             className="bg-green-50 text-green-600 hover:bg-green-100 border-green-200"
-                            onClick={handleGotoRescuePage}
+                            onClick={handleAddRescue}
                           >
-                            <Plus className="mr-2 h-4 w-4" /> Đi đến trang quản lý cứu hộ
+                            <Plus className="mr-2 h-4 w-4" /> Thêm thông tin cứu hộ
                           </Button>
                         </div>
                       </TableCell>
@@ -1838,6 +1950,135 @@ const DisasterDetailPage = () => {
               className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               Lưu thay đổi
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal thêm/cập nhật cứu hộ */}
+      <Dialog open={showAddRescueDialog} onOpenChange={(open) => {
+        if (!open) resetRescueTypeForm();
+        setShowAddRescueDialog(open);
+      }}>
+        <DialogContent className="sm:max-w-[500px] bg-white">
+          <DialogHeader>
+            <DialogTitle>{rescueTypeForm.id ? 'Cập nhật thông tin cứu hộ' : 'Thêm mới thông tin cứu hộ'}</DialogTitle>
+          </DialogHeader>
+          <DialogDescription>
+            {rescueTypeForm.id ? 'Cập nhật thông tin chi tiết cho loại cứu hộ.' : 'Thêm thông tin cứu hộ mới cho thảm họa này.'}
+          </DialogDescription>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="rescueTypeId" className="text-xs text-gray-500 mb-1 block">Loại cứu hộ <span className="text-red-500">*</span></Label>
+              <Select
+                value={rescueTypeForm.rescueTypeId}
+                onValueChange={(value) => setRescueTypeForm({ ...rescueTypeForm, rescueTypeId: value })}
+              >
+                <SelectTrigger className="bg-white">
+                  <SelectValue placeholder="Chọn loại cứu hộ" />
+                </SelectTrigger>
+                <SelectContent className="bg-white max-h-[300px] overflow-y-auto">
+                  {rescueTypeOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="unitId" className="text-xs text-gray-500 mb-1 block">Đơn vị <span className="text-red-500">*</span></Label>
+              <Select
+                value={rescueTypeForm.unitId}
+                onValueChange={(value) => setRescueTypeForm({ ...rescueTypeForm, unitId: value })}
+              >
+                <SelectTrigger className="bg-white">
+                  <SelectValue placeholder="Chọn đơn vị">
+                    {rescueTypeForm.unitId && availableDataFields?.find((df) => df.id === rescueTypeForm.unitId)?.name + " (" + availableDataFields?.find((df) => df.id === rescueTypeForm.unitId)?.unit + ")"} 
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className="bg-white max-h-[300px] overflow-y-auto">
+                  <HierarchicalSelect
+                    dataFields={convertToDataFieldNodes()}
+                    existingFieldIds={[]}
+                    emptyMessage="Không có đơn vị nào khả dụng"
+                    rootGroupLabel="Đơn vị cấp 1"
+                    onSelectNode={(nodeId) => setRescueTypeForm({ ...rescueTypeForm, unitId: nodeId })}
+                  />
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="value" className="text-xs text-gray-500 mb-1 block">Số lượng <span className="text-red-500">*</span></Label>
+              <Input
+                id="value"
+                type="number"
+                value={rescueTypeForm.value || ''}
+                onChange={(e) => setRescueTypeForm({ ...rescueTypeForm, value: parseFloat(e.target.value) || 0 })}
+                placeholder="Nhập số lượng"
+                className="w-full"
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="startDate" className="text-xs text-gray-500 mb-1 block">Ngày bắt đầu:</Label>
+                <DateTimePickerWrapper
+                  value={rescueTypeForm.startDate}
+                  onChange={(date) => setRescueTypeForm({ ...rescueTypeForm, startDate: date })}
+                  showTime={true}
+                  showClear={true}
+                  placeHolder="Chọn thời gian bắt đầu"
+                  className="w-full"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="endDate" className="text-xs text-gray-500 mb-1 block">Ngày kết thúc:</Label>
+                <DateTimePickerWrapper
+                  value={rescueTypeForm.endDate}
+                  onChange={(date) => setRescueTypeForm({ ...rescueTypeForm, endDate: date })}
+                  showTime={true}
+                  showClear={true}
+                  placeHolder="Chọn thời gian kết thúc"
+                  className="w-full"
+                  minDate={rescueTypeForm.startDate}
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="source" className="text-xs text-gray-500 mb-1 block">Nguồn gốc:</Label>
+              <Textarea
+                id="source"
+                value={rescueTypeForm.source || ''}
+                onChange={(e) => setRescueTypeForm({ ...rescueTypeForm, source: e.target.value })}
+                placeholder="Nhập thông tin về nguồn gốc của nguồn lực cứu hộ"
+                className="w-full resize-none"
+                rows={3}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                resetRescueTypeForm();
+                setShowAddRescueDialog(false);
+              }}
+            >
+              Hủy
+            </Button>
+            <Button 
+              variant="default" 
+              onClick={handleAddOrUpdateRescue} 
+              disabled={!rescueTypeForm.rescueTypeId || !rescueTypeForm.unitId}
+            >
+              {rescueTypeForm.id ? 'Cập nhật' : 'Thêm mới'}
             </Button>
           </DialogFooter>
         </DialogContent>

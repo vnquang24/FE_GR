@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { PanelsTopLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import MenuItemComponent from '../menu-item';
@@ -7,12 +7,35 @@ import { menuItems } from '@/lib/menu-data';
 import { useStoreState, useStoreActions } from '@/lib/redux/hook';
 
 const Sidebar: React.FC = () => {
+  // Sử dụng local state để tránh hydration mismatch
+  const [mounted, setMounted] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState('w-64');
+  
   const isShowSidebar = useStoreState(state => state.appState.isShowSidebar);
   const setIsShowSidebar = useStoreActions(actions => actions.appState.setIsShowSidebar);
   
+  // Chỉ cập nhật UI sau khi component mount ở client
+  useEffect(() => {
+    setMounted(true);
+    setSidebarWidth(isShowSidebar ? 'w-16' : 'w-64');
+  }, [isShowSidebar]);
+
+  // Xử lý toggle sidebar
+  const handleToggleSidebar = () => {
+    setIsShowSidebar(!isShowSidebar);
+  };
+  
+  // Render placeholder ban đầu để tránh hydration error
+  if (!mounted) {
+    return (
+      <div className="w-64 h-screen bg-white transition-all duration-300 relative flex flex-col">
+        {/* Placeholder content */}
+      </div>
+    );
+  }
+  
   return (
-    <div className={`${isShowSidebar ? 'w-16' : 'w-64'} h-screen bg-white transition-all duration-300 relative flex flex-col`}>
-      {/* Logo và tiêu đề - không cuộn */}
+    <div className={`${sidebarWidth} h-screen bg-white transition-all duration-300 relative flex flex-col`}>
       <Link 
         href="/statistical/disaster" 
         className={`flex items-center ${
@@ -41,7 +64,7 @@ const Sidebar: React.FC = () => {
 
       {/* Toggle Button */}
       <button
-        onClick={() => setIsShowSidebar(!isShowSidebar)}
+        onClick={handleToggleSidebar}
         className="absolute -right-4 top-1/2 transform -translate-y-1/2 bg-white p-1 rounded-full shadow-md hover:bg-gray-50 z-10"
       >
         {isShowSidebar ? (

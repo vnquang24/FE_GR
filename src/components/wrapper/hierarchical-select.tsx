@@ -40,6 +40,7 @@ const HierarchicalSelect: React.FC<HierarchicalSelectProps> = ({
   emptyMessage = 'Không có trường dữ liệu khả dụng',
   rootGroupLabel = 'Trường dữ liệu cấp 1',
   className,
+  onSelectNode,
   filterFunction
 }) => {
   const [expandedNodes, setExpandedNodes] = useState<string[]>([]);
@@ -112,46 +113,52 @@ const HierarchicalSelect: React.FC<HierarchicalSelectProps> = ({
     );
   };
 
-  // // Xử lý sự kiện khi một node được chọn
-  // const handleNodeSelect = (nodeId: string, e?: React.MouseEvent) => {
-  //   // Ngăn chặn sự kiện mặc định và bubbling nếu e tồn tại
-  //   if (e) {
-  //     e.preventDefault();
-  //     e.stopPropagation();
-  //   }
+  // Xử lý sự kiện khi một node được chọn
+  const handleNodeSelect = (nodeId: string, e?: React.MouseEvent) => {
+    // Ngăn chặn sự kiện mặc định và bubbling nếu e tồn tại
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
 
-  //   // Gọi callback onSelectNode nếu được cung cấp
-  //   if (onSelectNode) {
-  //     // Tìm node được chọn từ danh sách
-  //     const selectedNode = dataFields.find(field => field.id === nodeId);
+    // Gọi callback onSelectNode nếu được cung cấp
+    if (onSelectNode) {
+      // Gọi callback với nodeId được chọn (kể cả node con)
+      onSelectNode(nodeId);
       
-  //     if (selectedNode) {
-  //       // Đóng tất cả các node khác và chỉ mở rộng đường dẫn đến node được chọn
-  //       if (selectedNode.parentId) {
-  //         // Nếu node có parent, mở rộng đường dẫn đến parent
-  //         let currentParentId = selectedNode.parentId;
-  //         const parentsToExpand = [currentParentId];
-          
-  //         // Lặp qua các cấp parent để mở rộng
-  //         while (currentParentId) {
-  //           const parentNode = dataFields.find(field => field.id === currentParentId);
-  //           if (parentNode && parentNode.parentId) {
-  //             parentsToExpand.push(parentNode.parentId);
-  //             currentParentId = parentNode.parentId;
-  //           } else {
-  //             break;
-  //           }
-  //         }
-          
-  //         // Cập nhật trạng thái các node đã mở rộng
-  //         setExpandedNodes(parentsToExpand);
-  //       }
+      // Tìm node được chọn từ danh sách
+      const selectedNode = dataFields.find(field => field.id === nodeId);
+      
+      if (selectedNode && selectedNode.parentId) {
+        // Nếu node có parent, mở rộng đường dẫn đến parent
+        let currentParentId = selectedNode.parentId;
+        const parentsToExpand = [currentParentId];
         
-  //       // Gọi callback với nodeId được chọn
-  //       onSelectNode(nodeId);
-  //     }
-  //   }
-  // };
+        // Lặp qua các cấp parent để mở rộng
+        while (currentParentId) {
+          const parentNode = dataFields.find(field => field.id === currentParentId);
+          if (parentNode && parentNode.parentId) {
+            parentsToExpand.push(parentNode.parentId);
+            currentParentId = parentNode.parentId;
+          } else {
+            break;
+          }
+        }
+        
+        // Cập nhật trạng thái các node đã mở rộng
+        setExpandedNodes(prev => {
+          // Chỉ thêm các parent chưa được mở rộng
+          const newExpanded = [...prev];
+          parentsToExpand.forEach(id => {
+            if (!newExpanded.includes(id)) {
+              newExpanded.push(id);
+            }
+          });
+          return newExpanded;
+        });
+      }
+    }
+  };
 
   // Render default select item nếu không có renderItem được cung cấp
   const defaultRenderItem = (node: DataFieldNode, level: number, hasNodeChildren: boolean, isExpanded: boolean) => {
@@ -163,6 +170,12 @@ const HierarchicalSelect: React.FC<HierarchicalSelectProps> = ({
           value={node.id}
           className="flex-1 bg-white hover:bg-transparent"
           style={{ paddingLeft: `${16 + padding}px`, paddingRight: hasNodeChildren ? "2.5rem" : "1rem" }}
+          onClick={(e) => {
+            // Đánh dấu sự kiện là đã xử lý để tránh bubbling
+            e.stopPropagation();
+            // Gọi handleNodeSelect với node hiện tại
+            handleNodeSelect(node.id, e);
+          }}
         >
           {node.name} {node.unit ? `(${node.unit})` : ''} 
         </SelectItem>
@@ -206,7 +219,7 @@ const HierarchicalSelect: React.FC<HierarchicalSelectProps> = ({
     return (
       <div className={cn("hierarchical-select", className)} onClick={(e) => e.stopPropagation()}>
         {rootNodes.length > 0 && (
-          <div className="px-2 py-1 text-xs text-gray-500 font-semibold">{rootGroupLabel}</div>
+          <div className="px-2 py-1 text-xs text-gray-500 font-semibold">Số lượng trường dữ liệu: {rootNodes.length}</div>
         )}
         
         {rootNodes.map((node) => renderNode(node))}

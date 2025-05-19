@@ -30,24 +30,11 @@ type Province = {
   code?: string;
 };
 
-// Định nghĩa type cho RescueResourceDisaster
-// type RescueResourceDisaster = {
-//   disasterId: string;
-//   value: number;
-//   unitId: string;
-//   startDate?: Date;
-//   endDate?: Date;
-//   source?: string;
-// };
 
 const RescueResourceDetailPage: React.FC = () => {
   const params = useParams();
   const router = useRouter();
   const rescueTypeId = params.id as string;
-
-  // Lấy giá trị operationNowPage từ Redux store
-  const operationNowPage = useStoreState(state => state.appState.operationNowPage);
-  const setOperationNowPage = useStoreActions(actions => actions.appState.setOperationNowPage);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
   const ITEMS_PER_PAGE = 10;
