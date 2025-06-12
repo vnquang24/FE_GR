@@ -15,7 +15,7 @@ export function Calendar(props: DayPickerProps) {
         root: `shadow-lg p-5 bg-white`,
         chevron: `fill-amber-500`,
         day: `h-9 w-9 p-0 font-normal aria-selected:opacity-100 rounded-md flex items-center justify-center`,
-        day_outside: "text-gray-200 opacity-25 text-xs",
+        day_outside: "text-gray-200 opacity-25",
         head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem] text-center",
         nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
         caption_label: "text-sm font-medium",

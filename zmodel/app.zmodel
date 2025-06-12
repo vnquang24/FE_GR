@@ -25,7 +25,7 @@ model Disaster extends Base {
     rescueTypes      RescueTypeOnDisaster[]
     startDateTime    DateTime?
     endDateTime      DateTime?
-    
+
     @@allow('read', auth().group?[permission?[name == Disaster && permissionType == READ && !disabled]])
     @@allow('create', auth().group?[permission?[name == Disaster && permissionType == CREATE && !disabled]])
     @@allow('update', auth().group?[permission?[(name == Disaster && permissionType == UPDATE) || (name == Disaster && permissionType == DELETE) && !disabled]])

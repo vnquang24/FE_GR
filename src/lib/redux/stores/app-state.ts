@@ -9,6 +9,10 @@ const appState: AppState = {
     operationNowPage: 1,
     setOperationNowPage: action((state, payload) => {
         state.operationNowPage = payload
+    }),
+    isUpdateAbility: false,
+    setIsUpdateAbility: action((state, payload) => {
+        state.isUpdateAbility = payload
     })
 }
 

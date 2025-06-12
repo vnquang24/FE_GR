@@ -1,4 +1,5 @@
 import 'common/base'
+import 'common/enum'
 import 'app'
 import 'category'
 
@@ -6,7 +7,11 @@ model Zone extends Base{
     name String
     boundary Json
     disaster Disaster[]
-    @@allow('all', auth() != null)
+    
+    @@allow('read', auth().group?[permission?[name == Zone && permissionType == READ && !disabled]])
+    @@allow('create', auth().group?[permission?[name == Zone && permissionType == CREATE && !disabled]])
+    @@allow('update', auth().group?[permission?[name == Zone && permissionType == UPDATE && !disabled]])
+    @@allow('delete', auth().group?[permission?[name == Zone && permissionType == DELETE && !disabled]])
 }
 
 model Coordinate extends Base{
@@ -16,5 +21,9 @@ model Coordinate extends Base{
 
     disaster     Disaster[]
     media        Media[]
-    @@allow('all', auth() != null)
+    
+    @@allow('read', auth().group?[permission?[name == Coordinate && permissionType == READ && !disabled]])
+    @@allow('create', auth().group?[permission?[name == Coordinate && permissionType == CREATE && !disabled]])
+    @@allow('update', auth().group?[permission?[name == Coordinate && permissionType == UPDATE && !disabled]])
+    @@allow('delete', auth().group?[permission?[name == Coordinate && permissionType == DELETE && !disabled]])
 }

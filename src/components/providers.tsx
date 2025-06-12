@@ -16,9 +16,9 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           fetch: fetchInstance,
         }}
       >
-        <StoreProviderWrapper>
-          {children}
-        </StoreProviderWrapper>
+          <StoreProviderWrapper>
+            {children}
+          </StoreProviderWrapper>
         <Toast position="top-center" />
         {process.env.NODE_ENV === 'development' && <ReactQueryDevtools />}
       </ZenStackHooksProvider>

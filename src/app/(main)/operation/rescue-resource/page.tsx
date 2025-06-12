@@ -38,7 +38,7 @@ const RescueResourcePage: React.FC = () => {
 
   // Xây dựng điều kiện tìm kiếm
   const buildSearchCondition = () => {
-    let whereCondition: any = {
+    const whereCondition: any = {
       deleted: null,
       OR: [
         {

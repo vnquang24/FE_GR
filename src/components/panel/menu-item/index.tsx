@@ -1,15 +1,45 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import { MenuItemProps } from './type';
 import clsx from 'clsx';
 import { useStoreState } from '@/lib/redux/hook';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 
-const MenuItemComponent: React.FC<MenuItemProps> = ({ item, depth }) => {
-  const [isOpen, setIsOpen] = useState(false);
+const MenuItemComponent: React.FC<MenuItemProps> = ({ item, depth, hidden }) => {
+  const pathname = usePathname();
   const isShowSidebar = useStoreState(state => state.appState.isShowSidebar);
+
+  // Recursively check if any child menu item is active
+  const hasActiveChild = React.useCallback((menuItem: MenuItemProps['item']): boolean => {
+    if (!menuItem.subMenu) {
+      return false;
+    }
+    return menuItem.subMenu.some(
+      (sub) => (sub.pathname && pathname.startsWith(sub.pathname)) || hasActiveChild(sub)
+    );
+  }, [pathname]);
+
+  const [isOpen, setIsOpen] = useState(hasActiveChild(item));
+  
+  // Update open state when path changes
+  useEffect(() => {
+    if (!isShowSidebar) {
+      setIsOpen(hasActiveChild(item));
+    }
+  }, [pathname, item, hasActiveChild, isShowSidebar]);
+  
+  // Kiểm tra hidden để quyết định có render hay không
+  if (hidden || item.hidden) {
+    return null;
+  }
+  
+  // An item is active if its path is a prefix of the current path
+  const isActive = item.pathname ? pathname.startsWith(item.pathname) : false;
+  // An item is a parent of an active item if it has an active child
+  const isParentOfActive = hasActiveChild(item);
 
   // Tính toán kích thước icon dựa trên độ sâu
   const getIconSize = (depth: number) => {
@@ -42,7 +72,8 @@ const MenuItemComponent: React.FC<MenuItemProps> = ({ item, depth }) => {
           size={getIconSize(depth)}
           className={clsx(
             "flex-shrink-0",
-            depth > 0 && "text-gray-500" // Màu nhạt hơn cho submenu
+            depth > 0 && "text-gray-500", // Màu nhạt hơn cho submenu
+            (isActive || (isParentOfActive && isShowSidebar)) && "text-blue-600"
           )}
         />
       )}
@@ -63,6 +94,9 @@ const MenuItemComponent: React.FC<MenuItemProps> = ({ item, depth }) => {
           "ml-8": !isShowSidebar && depth === 2,
           "ml-12": !isShowSidebar && depth === 3,
           "ml-16": !isShowSidebar && depth >= 4,
+          // Style for parent of active. No background, just text color and font weight.
+          "text-blue-600 font-medium": !isShowSidebar && isParentOfActive,
+          "bg-blue-50": isShowSidebar && isParentOfActive
         }
       )}
     >
@@ -85,6 +119,8 @@ const MenuItemComponent: React.FC<MenuItemProps> = ({ item, depth }) => {
           "ml-8": !isShowSidebar && depth === 2,
           "ml-12": !isShowSidebar && depth === 3,
           "ml-16": !isShowSidebar && depth >= 4,
+          // Add style for active item
+          "bg-blue-50 text-blue-600 font-medium": isActive,
         }
       )}
     >
@@ -102,6 +138,7 @@ const MenuItemComponent: React.FC<MenuItemProps> = ({ item, depth }) => {
           side="right"
           align="start"
           className="p-1 min-w-[100px]"
+          hidden={!isShowSidebar}
         >
           <div className="flex flex-col gap-2">
             <div className="font-medium text-sm">{item.label}</div>
@@ -109,15 +146,18 @@ const MenuItemComponent: React.FC<MenuItemProps> = ({ item, depth }) => {
         </HoverCardContent>
       </HoverCard>
       
-      {isOpen && item.subMenu && (
+      {isOpen && !isShowSidebar && item.subMenu && (
         <ul className="mt-0.5">
-          {item.subMenu.map((subItem) => (
-            <MenuItemComponent
-              key={subItem.label}
-              item={subItem}
-              depth={depth + 1}
-            />
-          ))}
+          {item.subMenu
+            .filter(subItem => !subItem.hidden) // Filter ra các subItem bị ẩn
+            .map((subItem) => (
+              <MenuItemComponent
+                key={subItem.label}
+                item={subItem}
+                depth={depth + 1}
+                hidden={subItem.hidden}
+              />
+            ))}
         </ul>
       )}
     </div>

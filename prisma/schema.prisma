@@ -18,6 +18,21 @@ enum PermissionName {
   Disaster
   Media
   RescueTypeOnDisaster
+  Province
+  District
+  Commune
+  DisasterType
+  PriorityLevel
+  EmergencyLevel
+  DataField
+  RescueType
+  User
+  UserGroup
+  Permission
+  Zone
+  Coordinate
+  Device
+  RefreshToken
 }
 
 enum UserRole {

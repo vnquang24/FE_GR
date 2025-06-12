@@ -10,6 +10,8 @@
     "generate-api": "openapi-codegen gen chcn"
   },
   "dependencies": {
+    "@casl/ability": "^6.7.3",
+    "@casl/react": "^5.0.0",
     "@dagrejs/dagre": "^1.1.4",
     "@fullcalendar/core": "^6.1.15",
     "@fullcalendar/daygrid": "^6.1.15",

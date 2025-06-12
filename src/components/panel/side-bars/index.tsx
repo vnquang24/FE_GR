@@ -52,13 +52,16 @@ const Sidebar: React.FC = () => {
       <div className="flex-1 overflow-y-auto pr-0 h-0 pb-5 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
         {/* Menu Items */}
         <ul className="space-y-1 px-4 pb-5">
-          {menuItems.map((item) => (
-            <MenuItemComponent 
-              key={item.label}
-              item={item}
-              depth={0}
-            />
-          ))}
+          {menuItems
+            .filter(item => !item.hidden) // Lọc ra các menu bị ẩn
+            .map((item) => (
+              <MenuItemComponent 
+                key={item.label}
+                item={item}
+                depth={0}
+                hidden={item.hidden}
+              />
+            ))}
         </ul>
       </div>
 

@@ -13,7 +13,7 @@ import {
     MonitorCog,
   } from 'lucide-react';
   import { MenuItem } from '@/components/panel/menu-item/type';
-  
+
   export const menuItems: MenuItem[] = [
     {
       icon: Presentation, 
@@ -33,7 +33,8 @@ import {
         { 
           label: 'Tổng hợp về các trường thông tin', 
           pathname: '/statistical/data-field',
-          icon: CircleDot
+          icon: CircleDot,
+          hidden: false
         }
       ],
     },
@@ -58,6 +59,7 @@ import {
       icon: Users,
       label: 'Người dùng và phân quyền',
       pathname: '',
+      hidden: false,
       subMenu: [
         { 
           label: 'Tài khoản người dùng', 
@@ -72,7 +74,8 @@ import {
         {
           label: 'Phân quyền',
           pathname: '/system/permission',
-          icon: CircleDot
+          icon: CircleDot,
+          hidden: false
         }
       ],
     }, 

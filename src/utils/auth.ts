@@ -3,7 +3,6 @@ import { fetchAuthControllerLogin, fetchAuthControllerRegister, fetchAuthControl
 import { jwtDecode } from 'jwt-decode';
 import ms from 'ms'; // Thêm import này
 
-
 // Interface cho JWT payload
 interface JwtPayload {
   sub: string;       // email
@@ -158,6 +157,7 @@ export const login = async (email: string, password: string): Promise<boolean> =
         password,
       }
     });
+    
     console.log("Thời gian tồn tại của access token:", accessTokenMaxAge);
     console.log("Thời gian tồn tại của refresh token:", refreshTokenMaxAge);
     if (data && data.accessToken && data.refreshToken) {

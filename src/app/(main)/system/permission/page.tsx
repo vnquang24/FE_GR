@@ -1,17 +1,16 @@
 'use client';
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { PermissionType } from '@prisma/client';
 import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
+  TableWrapper,
   TableRow,
-  TableCaption
+  TableCell
 } from '@/components/ui/table';
-import { useToast, Toast } from '@/components/ui/toast';
+import { useToast } from '@/components/ui/toast';
 import { Switch } from '@/components/ui/switch';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
+import { Shield, AlertTriangle, ChevronLeft, ChevronRight, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { 
   useFindManyUserGroup, 
   useUpdateUserGroup, 
@@ -23,11 +22,21 @@ import { PERMISSION_NAMES, PERMISSION_NAMES_VI, PERMISSION_TYPES_VI } from '@/co
 
 const PermissionPage: React.FC = () => {
   const { toast } = useToast();
+  const [currentPage, setCurrentPage] = useState(0);
+  const ITEMS_PER_PAGE = 5; // Giảm số lượng để hiển thị tốt hơn
 
   // Sử dụng các hooks được sinh ra từ ZenStack
   const { data: userGroups = [], isLoading: isLoadingGroups, refetch: refetchUserGroups } = useFindManyUserGroup({
     include: {
-      permission: true
+      permission: true,
+      _count: {
+        select: { user: true }
+      }
+    },
+    take: ITEMS_PER_PAGE,
+    skip: currentPage * ITEMS_PER_PAGE,
+    orderBy: {
+      name: 'asc'
     }
   });
 
@@ -70,6 +79,123 @@ const PermissionPage: React.FC = () => {
     }
   }, [userGroups, updateUserGroupMutation, toast, refetchUserGroups]);
 
+  // Xử lý phân trang
+  const handlePreviousPage = () => {
+    if (currentPage > 0) setCurrentPage(currentPage - 1);
+  };
+
+  const handleNextPage = () => {
+    if (userGroups.length === ITEMS_PER_PAGE) setCurrentPage(currentPage + 1);
+  };
+
+  // Tạo columns cho bảng phân quyền của từng vai trò
+  const createPermissionColumns = (group: any) => [
+    {
+      header: "STT",
+      cell: (_: any, index: number) => <div className="text-center font-medium">{index + 1}</div>,
+      className: "w-16 text-center"
+    },
+    {
+      header: "Chức năng",
+      accessorKey: "permissionName",
+      cell: (item: any) => (
+        <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">
+          {item.permissionName}
+        </span>
+      ),
+      className: "w-48"
+    },
+    {
+      header: PERMISSION_TYPES_VI.CREATE,
+      cell: (item: any) => {
+        const createPerm = permissions.find(p => 
+          p.name === PERMISSION_NAMES[item.permissionKey] && p.permissionType === PermissionType.CREATE
+        );
+        const isGranted = createPerm && group.permission?.some(
+          (p: any) => p.name === PERMISSION_NAMES[item.permissionKey] && p.permissionType === PermissionType.CREATE
+        );
+        return (
+          <div className="flex items-center justify-center">
+            <Switch
+              checked={!!isGranted}
+              onCheckedChange={() => createPerm && togglePermission(group.id, createPerm.id)}
+            />
+          </div>
+        );
+      },
+      className: "w-24 text-center"
+    },
+    {
+      header: PERMISSION_TYPES_VI.READ,
+      cell: (item: any) => {
+        const readPerm = permissions.find(p => 
+          p.name === PERMISSION_NAMES[item.permissionKey] && p.permissionType === PermissionType.READ
+        );
+        const isGranted = readPerm && group.permission?.some(
+          (p: any) => p.name === PERMISSION_NAMES[item.permissionKey] && p.permissionType === PermissionType.READ
+        );
+        return (
+          <div className="flex items-center justify-center">
+            <Switch
+              checked={!!isGranted}
+              onCheckedChange={() => readPerm && togglePermission(group.id, readPerm.id)}
+            />
+          </div>
+        );
+      },
+      className: "w-24 text-center"
+    },
+    {
+      header: PERMISSION_TYPES_VI.UPDATE,
+      cell: (item: any) => {
+        const updatePerm = permissions.find(p => 
+          p.name === PERMISSION_NAMES[item.permissionKey] && p.permissionType === PermissionType.UPDATE
+        );
+        const isGranted = updatePerm && group.permission?.some(
+          (p: any) => p.name === PERMISSION_NAMES[item.permissionKey] && p.permissionType === PermissionType.UPDATE
+        );
+        return (
+          <div className="flex items-center justify-center">
+            <Switch
+              checked={!!isGranted}
+              onCheckedChange={() => updatePerm && togglePermission(group.id, updatePerm.id)}
+            />
+          </div>
+        );
+      },
+      className: "w-24 text-center"
+    },
+    {
+      header: PERMISSION_TYPES_VI.DELETE,
+      cell: (item: any) => {
+        const deletePerm = permissions.find(p => 
+          p.name === PERMISSION_NAMES[item.permissionKey] && p.permissionType === PermissionType.DELETE
+        );
+        const isGranted = deletePerm && group.permission?.some(
+          (p: any) => p.name === PERMISSION_NAMES[item.permissionKey] && p.permissionType === PermissionType.DELETE
+        );
+        return (
+          <div className="flex items-center justify-center">
+            <Switch
+              checked={!!isGranted}
+              onCheckedChange={() => deletePerm && togglePermission(group.id, deletePerm.id)}
+            />
+          </div>
+        );
+      },
+      className: "w-24 text-center"
+    }
+  ];
+
+  // Tạo dữ liệu cho bảng phân quyền
+  const createPermissionData = () => {
+    return Object.keys(PERMISSION_NAMES).map(permKey => ({
+      id: permKey,
+      permissionKey: permKey,
+      permissionName: PERMISSION_NAMES_VI[permKey]
+    }));
+  };
+
   if (isLoadingGroups || isLoadingPermissions) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -79,96 +205,102 @@ const PermissionPage: React.FC = () => {
     );
   }
 
-  return (
-    <>
-      {/* Thêm Toast Container ở góc phải phía trên */}
-      <Toast 
-        position="top-right" 
-        className="custom-toast-container"
-        toastOptions={{
-          style: { 
-            '--toastify-color-progress-light': '#3b82f6',
-            '--toastify-color-progress-dark': '#3b82f6'
-          } as React.CSSProperties
-        }}
-      />
-      
-      <div className="container mx-auto p-4">
-        <h1 
+  const permissionData = createPermissionData();
 
-          className="text-3xl font-bold mb-8 text-blue-800 relative pb-2 after:content-[''] after:absolute after:bottom-0 after:left-0 after:h-1 after:w-24 after:bg-blue-500"
-        >
-          Quản lý Phân quyền Hệ thống
-        </h1>
-        
-        <div 
-         
-          className="bg-white p-6 rounded-lg shadow-lg"
-        >
-          <h2 
-            className="text-xl font-semibold mb-6 text-blue-700"
-          >
-            Phân quyền theo vai trò
-          </h2>
+  return (
+    <div className="w-full mx-auto p-2 space-y-6">
+      <Card className="shadow-lg border-t-4 border-blue-200">
+        <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50">
+          <CardTitle className="text-xl text-gray-800 flex items-center">
+            <Shield className="mr-2 h-6 w-6" />
+            Quản lý Phân quyền Hệ thống
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="text-sm text-gray-600 mb-4">
+            Quản lý phân quyền cho từng vai trò trong hệ thống. Bật/tắt các quyền tương ứng cho từng chức năng.
+          </div>
           
-          {userGroups.map((group) => (
-            <div 
-              key={group.id}
-              className="mb-8 border border-blue-100 rounded-lg p-5 hover:shadow-md transition-shadow duration-300"
-            >
-              <h3 className="text-lg font-semibold mb-4 bg-gradient-to-r from-blue-50 to-blue-100 p-3 rounded-lg text-blue-700">
-                {group.name} 
-                <span className="text-blue-500 text-sm ml-2">({group.description})</span>
-              </h3>
-              
-              <div className="rounded-lg border border-blue-100 overflow-hidden">
-                <Table>
-                  <TableCaption>Phân quyền cho vai trò: {group.name}</TableCaption>
-                  <TableHeader>
-                    <TableRow className="bg-gradient-to-r from-blue-500 to-blue-600">
-                      <TableHead className="text-white font-medium">Chức năng</TableHead>
-                      <TableHead className="text-white font-medium text-center">{PERMISSION_TYPES_VI.CREATE}</TableHead>
-                      <TableHead className="text-white font-medium text-center">{PERMISSION_TYPES_VI.READ}</TableHead>
-                      <TableHead className="text-white font-medium text-center">{PERMISSION_TYPES_VI.UPDATE}</TableHead>
-                      <TableHead className="text-white font-medium text-center">{PERMISSION_TYPES_VI.DELETE}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {Object.keys(PERMISSION_NAMES).map(permKey => (
-                      <TableRow key={permKey} className="hover:bg-blue-50 transition-colors duration-200">
-                        <TableCell className="font-medium text-blue-800">{PERMISSION_NAMES_VI[permKey]}</TableCell>
-                        {Object.values(PermissionType).map(permType => {
-                          // Tìm quyền tương ứng
-                          const perm = permissions.find(p => 
-                            p.name === PERMISSION_NAMES[permKey] && p.permissionType === permType
-                          );
-                          
-                          // Kiểm tra xem nhóm này có quyền này không
-                          const isGranted = perm && group.permission?.some(
-                            p => p.name === PERMISSION_NAMES[permKey] && p.permissionType === permType
-                          );
-                          
-                          return (
-                            <TableCell key={`${permKey}-${permType}`} className="text-center">
-                              <div className="flex items-center justify-center">
-                                <Switch
-                                  checked={!!isGranted}
-                                  onCheckedChange={() => perm && togglePermission(group.id, perm.id)}
-                                />
-                              </div>
-                            </TableCell>
-                          );
-                        })}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+          {userGroups.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <div className="flex flex-col items-center justify-center">
+                <AlertTriangle className="h-8 w-8 text-yellow-500 mb-2" />
+                <p>Không có dữ liệu phân quyền</p>
               </div>
             </div>
-          ))}
-        </div>
-      </div>
-    </>
+          ) : (
+            <div className="space-y-6">
+              {userGroups.map((group, groupIndex) => (
+                <Card key={group.id} className="border border-blue-200 shadow-sm">
+                  <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 border-b">
+                    <CardTitle className="text-lg text-blue-800 flex items-center justify-between">
+                      <div className="flex items-center">
+                        <Users className="mr-2 h-5 w-5" />
+                        <span>{group.name}</span>
+                        {group.description && (
+                          <span className="text-blue-600 text-sm ml-2 font-normal">
+                            ({group.description})
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-2 text-sm">
+                        <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full">
+                          {group._count?.user || 0} người dùng
+                        </span>
+                        <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full">
+                          {group.permission?.length || 0} quyền
+                        </span>
+                      </div>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <TableWrapper
+                      variant="border"
+                      className="w-full"
+                      isLoading={false}
+                      data={permissionData}
+                      columns={createPermissionColumns(group)}
+                      emptyState={
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-4 text-gray-500">
+                            Không có dữ liệu chức năng
+                          </TableCell>
+                        </TableRow>
+                      }
+                    />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+        <CardFooter className="flex justify-between border-t p-3 bg-gradient-to-r from-blue-50 to-purple-50">
+          <div className="text-sm text-blue-700 font-medium">
+            Trang {currentPage + 1} | Hiển thị {userGroups.length} vai trò
+          </div>
+          <div className="flex space-x-2">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={handlePreviousPage} 
+              disabled={currentPage === 0} 
+              className="border-blue-300 text-blue-700 hover:bg-blue-100"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={handleNextPage} 
+              disabled={userGroups.length < ITEMS_PER_PAGE} 
+              className="border-blue-300 text-blue-700 hover:bg-blue-100"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardFooter>
+      </Card>
+    </div>
   );
 };
 

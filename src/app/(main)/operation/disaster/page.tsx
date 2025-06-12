@@ -312,7 +312,9 @@ const DisasterPage: React.FC = () => {
   // });
   
   // Thêm mutation để update (soft delete)
-  const { mutateAsync: deleteDisaster } = useUpdateDisaster()
+  const { mutateAsync: deleteDisaster } = useUpdateDisaster(
+        
+  )
   
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -348,7 +350,10 @@ const DisasterPage: React.FC = () => {
       const id = selectedDisaster.id;
       const result = await deleteDisaster({
         where: { id: id },
-        data: { deleted: new Date() }, // Đặt trường deleted là thời gian hiện tại
+        data: { 
+          deleted: new Date(),
+          name: selectedDisaster.name + " (Đã xóa)"
+        }, // Đặt trường deleted là thời gian hiện tại
         select : {id : true}
       });
       console.log("result test delete", result);

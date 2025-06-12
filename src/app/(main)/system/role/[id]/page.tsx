@@ -15,7 +15,6 @@ import {
 } from '@/components/ui/table';
 import { useFindUniqueUserGroup, useFindManyUser, useUpdateUserGroup, useUpdateUser } from '@/generated/hooks';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
 import { PERMISSION_NAMES, PERMISSION_NAMES_VI, PERMISSION_TYPES_VI } from '@/constant';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -41,10 +40,9 @@ interface UserType {
   name: string;
   email: string;
   role: UserRole;
-  phone?: string | null; // Cập nhật để có thể nhận giá trị null
+  phone?: string | null;
   locked?: boolean;
   group: Array<{ id: string; name: string }>;
-  // Thêm các trường khác nếu cần
 }
 
 const RoleDetailPage: React.FC = () => {
@@ -73,7 +71,7 @@ const RoleDetailPage: React.FC = () => {
     }
   });
 
-  // Lấy danh sách tất cả người dùng (có thể lọc sau nếu cần)
+  // Lấy danh sách tất cả người dùng
   const { data: allUsers = [], isLoading: isLoadingUsers } = useFindManyUser({
     include: {
       group: true
@@ -141,13 +139,13 @@ const RoleDetailPage: React.FC = () => {
     [refetchSearch]
   );
 
-  // Xử lý debounce tìm kiếm để tránh gọi API quá nhiều
+  // Xử lý debounce tìm kiếm
   useEffect(() => {
     const debounceTimeout = setTimeout(() => {
       if (isAddUserDialogOpen) {
         handleSearch(searchQuery);
       }
-    }, 300); // Debounce 300ms
+    }, 300);
 
     return () => clearTimeout(debounceTimeout);
   }, [searchQuery, isAddUserDialogOpen, handleSearch]);
@@ -172,7 +170,6 @@ const RoleDetailPage: React.FC = () => {
     }
 
     try {
-      // Thực hiện các thao tác cập nhật người dùng
       for (const user of selectedUsers) {
         await updateUserMutation.mutateAsync({
           where: { id: user.id },
@@ -190,7 +187,7 @@ const RoleDetailPage: React.FC = () => {
       });
       
       setIsAddUserDialogOpen(false);
-      refetch(); // Tải lại thông tin vai trò
+      refetch();
     } catch (error) {
       console.error('Lỗi khi thêm tài khoản vào vai trò:', error);
       toast({
@@ -222,7 +219,7 @@ const RoleDetailPage: React.FC = () => {
         description: "Đã xóa tài khoản khỏi vai trò."
       });
       
-      refetch(); // Tải lại thông tin vai trò
+      refetch();
     } catch (error) {
       console.error('Lỗi khi xóa tài khoản khỏi vai trò:', error);
       toast({
@@ -325,7 +322,7 @@ const RoleDetailPage: React.FC = () => {
       .slice(0, 2);
   };
 
-  // Tiêu đề dialog phù hợp với tab đang chỉnh sửa
+  // Tiêu đề dialog
   const getDialogTitle = () => {
     switch (dialogMode) {
       case 'info':
@@ -337,7 +334,7 @@ const RoleDetailPage: React.FC = () => {
     }
   };
 
-  // Mô tả dialog phù hợp với tab đang chỉnh sửa
+  // Mô tả dialog
   const getDialogDescription = () => {
     switch (dialogMode) {
       case 'info':
@@ -349,7 +346,7 @@ const RoleDetailPage: React.FC = () => {
     }
   };
 
-  // Nội dung dialog phù hợp với tab đang chỉnh sửa
+  // Nội dung dialog
   const renderDialogContent = () => {
     switch (dialogMode) {
       case 'info':
@@ -392,11 +389,11 @@ const RoleDetailPage: React.FC = () => {
             <div className="rounded-lg border border-blue-100 overflow-hidden max-h-96 overflow-y-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-gradient-to-r from-blue-500 to-blue-600">
-                    <TableHead className="text-black font-medium">Tài khoản</TableHead>
-                    <TableHead className="text-black font-medium">Email</TableHead>
-                    <TableHead className="text-black font-medium">Vai trò hệ thống</TableHead>
-                    <TableHead className="text-black font-medium">Thao tác</TableHead>
+                  <TableRow className="bg-blue-50">
+                    <TableHead className="text-blue-800 font-medium">Tài khoản</TableHead>
+                    <TableHead className="text-blue-800 font-medium">Email</TableHead>
+                    <TableHead className="text-blue-800 font-medium">Vai trò hệ thống</TableHead>
+                    <TableHead className="text-blue-800 font-medium">Thao tác</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -408,7 +405,7 @@ const RoleDetailPage: React.FC = () => {
                     </TableRow>
                   ) : (
                     linkedUsers.map((user) => (
-                      <TableRow key={user.id} className="hover:bg-blue-50 transition-colors duration-200">
+                      <TableRow key={user.id} className="hover:bg-blue-50">
                         <TableCell>
                           <div className="flex items-center">
                             <Avatar className="h-8 w-8 mr-2">
@@ -469,56 +466,21 @@ const RoleDetailPage: React.FC = () => {
     );
   }
 
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { 
-      opacity: 1,
-      transition: { 
-        when: "beforeChildren",
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { 
-      y: 0, 
-      opacity: 1,
-      transition: {
-        type: "spring",
-        stiffness: 100
-      }
-    }
-  };
-
   return (
     <div className="container mx-auto p-4">
-      <motion.div 
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.3 }}
-        className="flex items-center mb-6"
-      >
+      <div className="flex items-center mb-6">
         <Button
           variant="outline"
           onClick={() => router.back()}
-          className="mr-4 border-blue-300 hover:bg-blue-50 hover:text-blue-700 transition-colors duration-300"
+          className="mr-4 border-blue-300 hover:bg-blue-50"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Quay lại
         </Button>
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-        >
-          <h1 className="text-3xl font-bold text-blue-800 relative pb-2 after:content-[''] after:absolute after:bottom-0 after:left-0 after:h-1 after:w-24 after:bg-blue-500">
-            Chi tiết vai trò: {group.name}
-          </h1>
-        </motion.div>
-      </motion.div>
+        <h1 className="text-2xl font-bold text-blue-800">
+          Chi tiết vai trò: {group.name}
+        </h1>
+      </div>
 
       {/* Dialog chỉnh sửa thông tin */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
@@ -534,7 +496,6 @@ const RoleDetailPage: React.FC = () => {
             <Button 
               variant="outline" 
               onClick={() => setIsEditDialogOpen(false)}
-              className="border-gray-300"
             >
               Hủy
             </Button>
@@ -594,9 +555,9 @@ const RoleDetailPage: React.FC = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-12 text-center"></TableHead>
-                    <TableHead className="text-black">Tài khoản</TableHead>
-                    <TableHead className="text-black">Email</TableHead>
-                    <TableHead className="text-black">Vai trò hệ thống</TableHead>
+                    <TableHead>Tài khoản</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Vai trò hệ thống</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -619,7 +580,7 @@ const RoleDetailPage: React.FC = () => {
                     searchResults.map((user) => (
                       <TableRow 
                         key={user.id} 
-                        className={`hover:bg-blue-50 transition-colors duration-200 ${isUserSelected(user.id) ? 'bg-blue-50' : ''} cursor-pointer`}
+                        className={`hover:bg-blue-50 ${isUserSelected(user.id) ? 'bg-blue-50' : ''} cursor-pointer`}
                         onClick={() => toggleSelectUser(user)}
                       >
                         <TableCell className="text-center">
@@ -669,7 +630,6 @@ const RoleDetailPage: React.FC = () => {
             <Button 
               variant="outline" 
               onClick={() => setIsAddUserDialogOpen(false)}
-              className="border-gray-300"
             >
               Hủy
             </Button>
@@ -684,12 +644,7 @@ const RoleDetailPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      <motion.div 
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="bg-white p-6 rounded-lg shadow-lg space-y-8"
-      >
+      <div className="bg-white p-6 rounded-lg shadow-lg">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid grid-cols-3 gap-4 mb-6">
             <TabsTrigger value="basic-info" className="data-[state=active]:bg-blue-100 data-[state=active]:text-blue-800">
@@ -704,10 +659,7 @@ const RoleDetailPage: React.FC = () => {
           </TabsList>
 
           <TabsContent value="basic-info" className="outline-none">
-            <motion.div 
-              variants={itemVariants}
-              className="bg-gradient-to-r from-blue-50 to-blue-100 p-6 rounded-lg border border-blue-200"
-            >
+            <div className="bg-blue-50 p-6 rounded-lg border">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold text-blue-700">Thông tin cơ bản</h2>
                 <Button
@@ -747,9 +699,7 @@ const RoleDetailPage: React.FC = () => {
                   </div>
                 </div>
                 <div className="bg-white p-4 rounded-lg shadow-sm md:col-span-2">
-                  <div className="flex justify-between items-center mb-1">
-                    <p className="text-sm text-blue-500 font-medium">Thông tin thời gian:</p>
-                  </div>
+                  <p className="text-sm text-blue-500 font-medium mb-3">Thông tin thời gian:</p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="flex items-center">
                       <Calendar className="h-5 w-5 text-blue-500 mr-2" />
@@ -772,11 +722,11 @@ const RoleDetailPage: React.FC = () => {
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </div>
           </TabsContent>
 
           <TabsContent value="permissions" className="outline-none">
-            <motion.div variants={itemVariants}>
+            <div>
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold text-blue-700">Danh sách quyền</h2>
                 <Button
@@ -792,17 +742,17 @@ const RoleDetailPage: React.FC = () => {
                 <Table>
                   <TableCaption>Danh sách quyền của vai trò {group.name}</TableCaption>
                   <TableHeader>
-                    <TableRow className="bg-gradient-to-r from-blue-500 to-blue-600">
-                      <TableHead className="text-white font-medium">Chức năng</TableHead>
-                      <TableHead className="text-white font-medium text-center">{PERMISSION_TYPES_VI.CREATE}</TableHead>
-                      <TableHead className="text-white font-medium text-center">{PERMISSION_TYPES_VI.READ}</TableHead>
-                      <TableHead className="text-white font-medium text-center">{PERMISSION_TYPES_VI.UPDATE}</TableHead>
-                      <TableHead className="text-white font-medium text-center">{PERMISSION_TYPES_VI.DELETE}</TableHead>
+                    <TableRow className="bg-blue-50">
+                      <TableHead className="text-blue-800 font-medium">Chức năng</TableHead>
+                      <TableHead className="text-blue-800 font-medium text-center">{PERMISSION_TYPES_VI.CREATE}</TableHead>
+                      <TableHead className="text-blue-800 font-medium text-center">{PERMISSION_TYPES_VI.READ}</TableHead>
+                      <TableHead className="text-blue-800 font-medium text-center">{PERMISSION_TYPES_VI.UPDATE}</TableHead>
+                      <TableHead className="text-blue-800 font-medium text-center">{PERMISSION_TYPES_VI.DELETE}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {Object.keys(PERMISSION_NAMES).map(permKey => (
-                      <TableRow key={permKey} className="hover:bg-blue-50 transition-colors duration-200">
+                      <TableRow key={permKey} className="hover:bg-blue-50">
                         <TableCell className="font-medium text-blue-800">{PERMISSION_NAMES_VI[permKey]}</TableCell>
                         {Object.values(PermissionType).map(permType => {
                           const hasPermission = group.permission.some(
@@ -810,11 +760,7 @@ const RoleDetailPage: React.FC = () => {
                           );
                           return (
                             <TableCell key={`${permKey}-${permType}`} className="text-center">
-                              <motion.div 
-                                className="flex items-center justify-center"
-                                whileHover={{ scale: 1.2 }}
-                                transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                              >
+                              <div className="flex items-center justify-center">
                                 {hasPermission ? (
                                   <span className="flex items-center justify-center w-8 h-8 bg-green-100 text-green-600 rounded-full">
                                     ✓
@@ -824,7 +770,7 @@ const RoleDetailPage: React.FC = () => {
                                     ✗
                                   </span>
                                 )}
-                              </motion.div>
+                              </div>
                             </TableCell>
                           );
                         })}
@@ -833,11 +779,11 @@ const RoleDetailPage: React.FC = () => {
                   </TableBody>
                 </Table>
               </div>
-            </motion.div>
+            </div>
           </TabsContent>
 
           <TabsContent value="users" className="outline-none">
-            <motion.div variants={itemVariants}>
+            <div>
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold text-blue-700">Tài khoản liên kết</h2>
                 <Button
@@ -851,7 +797,7 @@ const RoleDetailPage: React.FC = () => {
               </div>
               
               {linkedUsers.length === 0 ? (
-                <div className="bg-gray-50 rounded-lg border border-gray-200 p-8 text-center">
+                <div className="bg-gray-50 rounded-lg border p-8 text-center">
                   <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-600 font-medium">Chưa có tài khoản nào được liên kết với vai trò này</p>
                   <Button
@@ -867,18 +813,18 @@ const RoleDetailPage: React.FC = () => {
                   <Table>
                     <TableCaption>Danh sách tài khoản được gán vai trò {group.name}</TableCaption>
                     <TableHeader>
-                      <TableRow className="bg-gradient-to-r from-blue-500 to-blue-600">
-                        <TableHead className="text-white font-medium">STT</TableHead>
-                        <TableHead className="text-white font-medium">Tài khoản</TableHead>
-                        <TableHead className="text-white font-medium">Email</TableHead>
-                        <TableHead className="text-white font-medium">Vai trò hệ thống</TableHead>
-                        <TableHead className="text-white font-medium">Trạng thái</TableHead>
-                        <TableHead className="text-white font-medium">Thao tác</TableHead>
+                      <TableRow className="bg-blue-50">
+                        <TableHead className="text-blue-800 font-medium">STT</TableHead>
+                        <TableHead className="text-blue-800 font-medium">Tài khoản</TableHead>
+                        <TableHead className="text-blue-800 font-medium">Email</TableHead>
+                        <TableHead className="text-blue-800 font-medium">Vai trò hệ thống</TableHead>
+                        <TableHead className="text-blue-800 font-medium">Trạng thái</TableHead>
+                        <TableHead className="text-blue-800 font-medium">Thao tác</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {linkedUsers.map((user, index) => (
-                        <TableRow key={user.id} className="hover:bg-blue-50 transition-colors duration-200">
+                        <TableRow key={user.id} className="hover:bg-blue-50">
                           <TableCell className="font-medium">{index + 1}</TableCell>
                           <TableCell>
                             <div className="flex items-center">
@@ -895,17 +841,17 @@ const RoleDetailPage: React.FC = () => {
                           </TableCell>
                           <TableCell>{user.email}</TableCell>
                           <TableCell>
-                            <Badge variant="outline" className="bg-blue-50 text-blue-800 hover:bg-blue-100">
+                            <Badge variant="outline" className="bg-blue-50 text-blue-800">
                               {getUserRoleName(user.role)}
                             </Badge>
                           </TableCell>
                           <TableCell>
                             {user.locked ? (
-                              <Badge variant="outline" className="bg-red-50 text-red-800 hover:bg-red-100">
+                              <Badge variant="outline" className="bg-red-50 text-red-800">
                                 Đã khóa
                               </Badge>
                             ) : (
-                              <Badge variant="outline" className="bg-green-50 text-green-800 hover:bg-green-100">
+                              <Badge variant="outline" className="bg-green-50 text-green-800">
                                 Đang hoạt động
                               </Badge>
                             )}
@@ -927,22 +873,19 @@ const RoleDetailPage: React.FC = () => {
                   </Table>
                 </div>
               )}
-            </motion.div>
+            </div>
           </TabsContent>
         </Tabs>
 
-        <motion.div 
-          variants={itemVariants}
-          className="flex justify-end"
-        >
+        <div className="flex justify-end mt-6">
           <Button
             onClick={() => router.push('/system/role')}
-            className="bg-gray-600 hover:bg-gray-700 text-white font-medium transition-colors duration-300 hover:shadow-lg active:scale-95 transform"
+            className="bg-gray-600 hover:bg-gray-700 text-white"
           >
             Quay Lại Danh Sách
           </Button>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
     </div>
   );
 };

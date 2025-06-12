@@ -673,7 +673,7 @@ const DateTimePickerWrapper = ({
                     classNames={{
                         caption: "hidden",
                         day: "h-7 w-7 p-0 font-normal text-xs aria-selected:opacity-100 rounded-md flex items-center justify-center z-10",
-                        day_outside: "text-gray-200 opacity-25 text-xs",
+                        day_outside: "text-gray-400 opacity-40 text-xs",
                         head_cell: "text-muted-foreground rounded-md w-7 font-normal text-[0.7rem] text-center",
                         cell: "text-center p-0 relative h-7 w-7",
                         table: "w-full border-collapse space-y-1 max-w-[280px]",

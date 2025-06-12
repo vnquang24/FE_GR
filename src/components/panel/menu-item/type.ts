@@ -3,8 +3,7 @@ import { LucideIcon } from 'lucide-react';
 export type MenuItemProps = {
     item: MenuItem,
     depth: number,
-    // isShowSidebar: boolean
-
+    hidden?: boolean;
 }
 
 export interface MenuItem {
@@ -12,4 +11,5 @@ export interface MenuItem {
   label: string;
   pathname: string;
   subMenu?: MenuItem[];
+  hidden?: boolean;
 }
